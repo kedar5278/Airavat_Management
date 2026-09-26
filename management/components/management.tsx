@@ -128,6 +128,10 @@ function Login({ ready, onLogin }: { ready: boolean; onLogin: (id: string, passw
     </div><p className="login-footer">© 2026 Airavat Security Service · Jamnagar, Gujarat</p>
   </div>;
 }
+function PageHeading({ eyebrow, title, subtitle, action }: { eyebrow: string; title: string; subtitle: string; action?: React.ReactNode }) {
+  return <div className="page-heading"><div><div className="eyebrow"><span>{eyebrow}</span><i>●</i></div><h1>{title}</h1><p>{subtitle}</p></div>{action}</div>;
+}
+
 function Dashboard({ guards, active, onNavigate }: { guards: Guard[]; active: number; onNavigate: (v: View) => void }) {
   const cards: { icon: string; badge: string; title: string; description: string; action: string; page: View; color: string }[] = [
     { icon: "♙+", badge: "REGISTRATION", title: "Register New Guard", description: "Enroll guards with full profile details, shift assignment, and deployment information.", action: "Open Registration Form", page: "Register Guard", color: "blue" },
