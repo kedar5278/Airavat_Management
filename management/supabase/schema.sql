@@ -180,7 +180,7 @@ drop policy if exists "guards read own attendance selfies" on storage.objects;
 create policy "guards read own attendance selfies" on storage.objects for select to authenticated
 using (
   bucket_id = 'guard-attendance-selfies'
-  and split_part(name, '/', 1) in (select id from public.guards where lower(coalesce(email,'')) = lower(coalesce((select auth.jwt() ->> 'email'), '')) and status = 'Active')
+  and split_part(name, '/', 1) in (select id from public.guards where right(regexp_replace(coalesce(phone,''), '\D', '', 'g'), 10) = right(regexp_replace(coalesce((select auth.jwt() ->> 'phone'), ''), '\D', '', 'g'), 10) and status = 'Active')
 );
 
 -- Private bucket: photos are served using short-lived signed URLs.
