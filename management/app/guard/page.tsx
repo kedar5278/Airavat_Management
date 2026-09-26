@@ -14,7 +14,11 @@ const text = {
 
 export default function GuardPortal(){
   const [lang,setLang]=useState<"en"|"gu">("en");
-  const [user,setUser]=useState<{phone?:string;email?:string}|null>(null);\n  const [phone,setPhone]=useState("");\n  const [otp,setOtp]=useState("");\n  const [otpSent,setOtpSent]=useState(false);\n  const [authBusy,setAuthBusy]=useState(false);
+  const [user,setUser]=useState<{phone?:string;email?:string}|null>(null);
+  const [phone,setPhone]=useState("");
+  const [otp,setOtp]=useState("");
+  const [otpSent,setOtpSent]=useState(false);
+  const [authBusy,setAuthBusy]=useState(false);
   const [guard,setGuard]=useState<Guard|null>(null);
   const [rows,setRows]=useState<Attendance[]>([]);
   const [selfie,setSelfie]=useState("");
@@ -32,7 +36,10 @@ export default function GuardPortal(){
     const {data:{user}}=await sb.auth.getUser();
     setUser(user ? {phone:user.phone,email:user.email} : null);
     if(!user){setLoading(false);return;}
-    const digits=(user.phone ?? "").replace(/\\D/g,"");\n    const last10=digits.length>=10?digits.slice(-10):digits;\n    const {data:allGuards}=await sb.from("guards").select("id,name,email,phone,designation,site,shift,status,photo_path").eq("status","Active");\n    const g=(allGuards ?? []).find((x:Guard)=>x.phone.replace(/\\D/g,"").slice(-10)===last10) ?? null;
+    const digits=(user.phone ?? "").replace(/\D/g,"");
+    const last10=digits.length>=10?digits.slice(-10):digits;
+    const {data:allGuards}=await sb.from("guards").select("id,name,email,phone,designation,site,shift,status,photo_path").eq("status","Active");
+    const g=(allGuards ?? []).find((x:Guard)=>x.phone.replace(/\D/g,"").slice(-10)===last10) ?? null;
     if(!g){setLoading(false);return;}
     setGuard(g);
     const {data:a}=await sb.from("guard_attendance").select("attendance_date,attendance_time,latitude,longitude,selfie_path,status").eq("guard_id",g.id).order("attendance_date",{ascending:false}).limit(90);
@@ -45,7 +52,7 @@ export default function GuardPortal(){
 
   const sendOtp=async()=>{
     const sb=getSupabaseBrowserClient(); if(!sb)return;
-    const digits=phone.replace(/\\D/g,"");
+    const digits=phone.replace(/\D/g,"");
     if(digits.length!==10){setMessage(t.invalidPhone);return;}
     setAuthBusy(true);setMessage("");
     const {error}=await sb.auth.signInWithOtp({phone:"+91"+digits});
@@ -55,7 +62,7 @@ export default function GuardPortal(){
   };
   const verifyOtp=async()=>{
     const sb=getSupabaseBrowserClient(); if(!sb)return;
-    const digits=phone.replace(/\\D/g,"");
+    const digits=phone.replace(/\D/g,"");
     if(digits.length!==10||otp.trim().length<4){setMessage(t.invalidPhone);return;}
     setAuthBusy(true);setMessage("");
     const {error}=await sb.auth.verifyOtp({phone:"+91"+digits,token:otp.trim(),type:"sms"});
@@ -95,7 +102,7 @@ export default function GuardPortal(){
 
   if(loading)return <main className="guard-shell"><div className="guard-card">{t.loading}</div></main>;
   if(!user)return <main className="guard-shell"><div className="guard-card guard-login-card"><div className="guard-logo">A</div><h1>AIRAVAT</h1><p>Guard Attendance Portal</p>
-    {!otpSent?<><label className="guard-label">{t.phone}</label><input className="guard-input" inputMode="numeric" maxLength={10} value={phone} onChange={e=>setPhone(e.target.value.replace(/\\D/g,""))} placeholder="9876543210"/><button className="guard-primary full" disabled={authBusy} onClick={()=>void sendOtp()}>{authBusy?"Sending...":t.sendOtp}</button></>:<><label className="guard-label">{t.otp}</label><input className="guard-input" inputMode="numeric" maxLength={6} value={otp} onChange={e=>setOtp(e.target.value.replace(/\\D/g,""))} placeholder="123456"/><button className="guard-primary full" disabled={authBusy} onClick={()=>void verifyOtp()}>{authBusy?"Verifying...":t.verify}</button><button className="guard-outline full" onClick={()=>{setOtpSent(false);setOtp("");setMessage("")}}>{t.change}</button></>}
+    {!otpSent?<><label className="guard-label">{t.phone}</label><input className="guard-input" inputMode="numeric" maxLength={10} value={phone} onChange={e=>setPhone(e.target.value.replace(/\D/g,""))} placeholder="9876543210"/><button className="guard-primary full" disabled={authBusy} onClick={()=>void sendOtp()}>{authBusy?"Sending...":t.sendOtp}</button></>:<><label className="guard-label">{t.otp}</label><input className="guard-input" inputMode="numeric" maxLength={6} value={otp} onChange={e=>setOtp(e.target.value.replace(/\D/g,""))} placeholder="123456"/><button className="guard-primary full" disabled={authBusy} onClick={()=>void verifyOtp()}>{authBusy?"Verifying...":t.verify}</button><button className="guard-outline full" onClick={()=>{setOtpSent(false);setOtp("");setMessage("")}}>{t.change}</button></>}
     {message&&<p className="guard-message">{message}</p>}</div></main>;
   if(!guard)return <main className="guard-shell"><div className="guard-card"><h2>{t.notFound}</h2><button className="guard-outline" onClick={()=>getSupabaseBrowserClient()?.auth.signOut().then(()=>window.location.reload())}>{t.logout}</button></div></main>;
 
