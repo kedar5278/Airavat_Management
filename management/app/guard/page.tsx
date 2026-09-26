@@ -51,14 +51,13 @@ export default function GuardPortal(){
     if(!selfie||!loc){setMessage(t.missing);return;}
     setBusy(true);setMessage("");
     try{
-      const r=await fetch("/api/guard/attendance",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({selfie,latitude:loc.lat,longitude:loc.lng})});
+      const r=await fetch("/api/guard/attendance",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({guardId:guard.id,selfie,latitude:loc.lat,longitude:loc.lng})});
       const data=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(data.error??"Attendance could not be saved.");
       setMessage(t.done);setSelfie("");setLoc(null);await load();
     }catch(e){setMessage(e instanceof Error?e.message:"Attendance could not be saved.");}
     finally{setBusy(false);}
   };
-  const logout=async()=>{await fetch("/api/guard/logout",{method:"POST"});window.location.href="/";};
 
   if(loading)return <main className="guard-shell"><div className="guard-card">{t.loading}</div></main>;
   if(!guard)return null;
@@ -66,7 +65,7 @@ export default function GuardPortal(){
   const already=rows.some(r=>r.attendance_date===today);
 
   return <main className="guard-shell">
-    <header className="guard-top"><div><strong>AIRAVAT</strong><span>Security Guard Portal</span></div><div className="guard-top-actions"><button onClick={()=>setLang(lang==="en"?"gu":"en")}>{lang==="en"?"ગુજરાતી":"English"}</button><button onClick={()=>void logout()}>{t.logout}</button></div></header>
+    <header className="guard-top"><div><strong>AIRAVAT</strong><span>Security Guard Portal</span></div><div className="guard-top-actions"><button onClick={()=>setLang(lang==="en"?"gu":"en")}>{lang==="en"?"ગુજરાતી":"English"}</button></div></header>
     <section className="guard-wrap">
       <div className="guard-profile"><div className="guard-avatar">{guard.name.slice(0,1).toUpperCase()}</div><div><h1>{guard.name}</h1><p>{guard.id} · {guard.designation}</p><small>{guard.site||"Site not assigned"} · {guard.shift}</small></div></div>
       <section className="guard-card attendance-card"><h2>{t.attendance}</h2>{already?<div className="guard-success">{t.already}</div>:<>
