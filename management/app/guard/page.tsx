@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./guard.css";
 
-type Attendance={attendance_date:string;attendance_time:string|null;latitude:number|null;longitude:number|null;selfie_path:string|null;status:string};
+type Attendance={attendance_date:string;attendance_time:string|null;latitude:number|null;longitude:number|null;accuracy:number|null;address:string|null;selfie_path:string|null;status:string};
 
 const TEST_GUARD={id:"TEST-GUARD-001",name:"Test Guard",phone:"0000000000",email:"",designation:"Security Guard",site:"Test Site",shift:"Day Shift",status:"Active"};
 const text={
@@ -15,13 +15,13 @@ export default function GuardPortal(){
   const [lang,setLang]=useState<"en"|"gu">("en");
   const [rows,setRows]=useState<Attendance[]>([]);
   const [selfie,setSelfie]=useState("");
-  const [loc,setLoc]=useState<{lat:number;lng:number}|null>(null);
+  const [loc,setLoc]=useState<{lat:number;lng:number;accuracy:number}|null>(null);\n  const [address,setAddress]=useState("");
   const [camera,setCamera]=useState(false);
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState("");
   const videoRef=useRef<HTMLVideoElement>(null);
   const streamRef=useRef<MediaStream|null>(null);
-  const t=text[lang];
+  const t=text[lang];\n  const mapKey=process.env.NEXT_PUBLIC_MAPTILER_KEY;
 
   useEffect(()=>{
     try{setRows(JSON.parse(localStorage.getItem("airavat-test-attendance")||"[]"));}catch{}
@@ -46,10 +46,10 @@ export default function GuardPortal(){
     if(!selfie||!loc){setMessage(t.missing);return;}
     setBusy(true);setMessage("");
     const date=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
-    const row={attendance_date:date,attendance_time:new Date().toISOString(),latitude:loc.lat,longitude:loc.lng,selfie_path:null,status:"Present" as const};
+    const row={attendance_date:date,attendance_time:new Date().toISOString(),latitude:loc.lat,longitude:loc.lng,accuracy:loc.accuracy,address:address||null,selfie_path:null,status:"Present" as const};
     const next=[row,...rows.filter(x=>x.attendance_date!==date)];
     localStorage.setItem("airavat-test-attendance",JSON.stringify(next));
-    setRows(next);setSelfie("");setLoc(null);setMessage(t.done);setBusy(false);
+    setRows(next);setSelfie("");setLoc(null);setAddress("");setMessage(t.done);setBusy(false);
   };
 
   const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
@@ -61,11 +61,11 @@ export default function GuardPortal(){
       <div className="guard-profile"><div className="guard-avatar">{TEST_GUARD.name.slice(0,1)}</div><div><h1>{TEST_GUARD.name}</h1><p>{TEST_GUARD.id} · {TEST_GUARD.designation}</p><small>{TEST_GUARD.site} · {TEST_GUARD.shift}</small></div></div>
       <section className="guard-card attendance-card"><h2>{t.attendance}</h2>{already?<div className="guard-success">{t.already}</div>:<>
         {camera?<div className="camera-box"><video ref={videoRef} autoPlay playsInline muted/><button className="guard-primary" onClick={capture}>{t.take}</button></div>:selfie?<div className="selfie-preview"><img src={selfie} alt="Attendance selfie"/><button className="guard-outline" onClick={()=>void startCamera()}>{t.retake}</button></div>:<button className="big-attendance" onClick={()=>void startCamera()}>📷<span>{t.take}</span></button>}
-        <button className={loc?"guard-success":"guard-location"} onClick={getLocation}>{loc?"✓ Location captured":"📍 "+t.location}</button>
+        <button className={loc?"guard-success":"guard-location"} onClick={getLocation}>{loc?"✓ Location captured":"📍 "+t.location}</button>\n        {loc&&<div className="location-details"><div><strong>GPS accuracy:</strong> {Math.round(loc.accuracy)} m</div>{address&&<div><strong>Address:</strong> {address}</div>}{mapKey&&<iframe title="Attendance location map" src={`https://api.maptiler.com/maps/streets-v4/?key=${encodeURIComponent(mapKey)}#15/${loc.lat}/${loc.lng}`} loading="lazy" className="guard-map"/>}<a className="guard-outline location-map-link" href={`https://www.openstreetmap.org/?mlat=${loc.lat}&mlon=${loc.lng}#map=18/${loc.lat}/${loc.lng}`} target="_blank" rel="noreferrer">Open Map</a></div>}
         <button className="guard-primary full" disabled={busy} onClick={()=>void submit()}>{busy?"Saving...":t.submit}</button>
         {message&&<p className="guard-message">{message}</p>}
       </>}</section>
-      <section className="guard-card"><h2>{t.history}</h2><div className="guard-history">{rows.length?rows.map(r=><div className="history-row" key={r.attendance_date}><div><strong>{new Date(r.attendance_date+"T00:00:00").toLocaleDateString(lang==="gu"?"gu-IN":"en-IN",{day:"2-digit",month:"short",year:"numeric"})}</strong><small>{r.attendance_time?new Date(r.attendance_time).toLocaleTimeString(lang==="gu"?"gu-IN":"en-IN",{hour:"2-digit",minute:"2-digit"}):"—"}</small></div><span>{r.status}</span>{r.latitude!=null&&r.longitude!=null&&<a href={"https://www.google.com/maps?q="+r.latitude+","+r.longitude} target="_blank" rel="noreferrer">📍</a>}</div>):<p className="guard-muted">No attendance records yet.</p>}</div></section>
+      <section className="guard-card"><h2>{t.history}</h2><div className="guard-history">{rows.length?rows.map(r=><div className="history-row" key={r.attendance_date}><div><strong>{new Date(r.attendance_date+"T00:00:00").toLocaleDateString(lang==="gu"?"gu-IN":"en-IN",{day:"2-digit",month:"short",year:"numeric"})}</strong><small>{r.attendance_time?new Date(r.attendance_time).toLocaleTimeString(lang==="gu"?"gu-IN":"en-IN",{hour:"2-digit",minute:"2-digit"}):"—"}{r.accuracy!=null?` · ±${Math.round(r.accuracy)}m`:""}</small></div><span>{r.status}</span>{r.latitude!=null&&r.longitude!=null&&<a href={"https://www.openstreetmap.org/?mlat="+r.latitude+"&mlon="+r.longitude+"#map=18/"+r.latitude+"/"+r.longitude} target="_blank" rel="noreferrer">📍</a>}</div>):<p className="guard-muted">No attendance records yet.</p>}</div></section>
     </section>
   </main>;
 }
