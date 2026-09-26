@@ -26,3 +26,5 @@ button.upload-button-secondary{border:1px solid var(--line)}
 .camera-dialog>p{color:var(--muted);font-size:13px}
 .camera-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
 
+
+.login-role-switch{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}.login-role-switch button{border:1px solid #dfe3eb;background:#f7f8fb;border-radius:9px;padding:11px;font-weight:700;color:#273550}.login-role-switch button.active{background:#080d42;color:#fff;border-color:#080d42}
