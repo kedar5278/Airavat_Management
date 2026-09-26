@@ -57,6 +57,9 @@ alter table public.guard_attendance add column if not exists latitude double pre
 alter table public.guard_attendance add column if not exists longitude double precision;
 alter table public.guard_attendance add column if not exists selfie_path text;
 alter table public.guard_attendance add column if not exists marked_by_user_id uuid references auth.users(id) on delete set null;
+alter table public.guard_attendance add column if not exists accuracy double precision;
+alter table public.guard_attendance add column if not exists address text;
+alter table public.guard_attendance add column if not exists marked_by_clerk_user_id text;
 
 create table if not exists public.invoices (
   id text primary key,
