@@ -10,8 +10,9 @@ as $
   select exists (
     select 1 from public.guards
     where id = p_guard_id
-      and lower(coalesce(email, '')) = lower(coalesce((select auth.jwt() ->> 'email'), ''))
       and status = 'Active'
+      and right(regexp_replace(coalesce(phone, ''), '\\D', '', 'g'), 10)
+          = right(regexp_replace(coalesce((select auth.jwt() ->> 'phone'), ''), '\\D', '', 'g'), 10)
   )
 $;
 
@@ -98,7 +99,11 @@ create policy "admin can verify own admin record" on public.admin_users for sele
 drop policy if exists "admin manages guards" on public.guards;
 create policy "admin manages guards" on public.guards for all to authenticated using (public.is_app_admin() and public.has_active_admin_device()) with check (public.is_app_admin() and public.has_active_admin_device());
 drop policy if exists "guard reads own profile" on public.guards;
-create policy "guard reads own profile" on public.guards for select to authenticated using (lower(coalesce(email, '')) = lower(coalesce((select auth.jwt() ->> 'email'), '')));
+create policy "guard reads own profile" on public.guards for select to authenticated using (
+  status = 'Active'
+  and right(regexp_replace(coalesce(phone, ''), '\\D', '', 'g'), 10)
+      = right(regexp_replace(coalesce((select auth.jwt() ->> 'phone'), ''), '\\D', '', 'g'), 10)
+);
 drop policy if exists "admin manages attendance" on public.guard_attendance;
 create policy "admin manages attendance" on public.guard_attendance for all to authenticated using (public.is_app_admin() and public.has_active_admin_device()) with check (public.is_app_admin() and public.has_active_admin_device());
 drop policy if exists "guard reads own attendance" on public.guard_attendance;
@@ -164,7 +169,7 @@ drop policy if exists "guards upload own attendance selfie" on storage.objects;
 create policy "guards upload own attendance selfie" on storage.objects for insert to authenticated
 with check (
   bucket_id = 'guard-attendance-selfies'
-  and split_part(name, '/', 1) in (select id from public.guards where lower(coalesce(email,'')) = lower(coalesce((select auth.jwt() ->> 'email'), '')) and status = 'Active')
+  and split_part(name, '/', 1) in (select id from public.guards where right(regexp_replace(coalesce(phone,''), '\\D', '', 'g'), 10) = right(regexp_replace(coalesce((select auth.jwt() ->> 'phone'), ''), '\\D', '', 'g'), 10) and status = 'Active')
 );
 
 drop policy if exists "admins read attendance selfies" on storage.objects;
