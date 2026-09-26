@@ -15,13 +15,15 @@ export default function GuardPortal(){
   const [lang,setLang]=useState<"en"|"gu">("en");
   const [rows,setRows]=useState<Attendance[]>([]);
   const [selfie,setSelfie]=useState("");
-  const [loc,setLoc]=useState<{lat:number;lng:number;accuracy:number}|null>(null);\n  const [address,setAddress]=useState("");
+  const [loc,setLoc]=useState<{lat:number;lng:number;accuracy:number}|null>(null);
+  const [address,setAddress]=useState("");
   const [camera,setCamera]=useState(false);
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState("");
   const videoRef=useRef<HTMLVideoElement>(null);
   const streamRef=useRef<MediaStream|null>(null);
-  const t=text[lang];\n  const mapKey=process.env.NEXT_PUBLIC_MAPTILER_KEY;
+  const t=text[lang];
+  const mapKey=process.env.NEXT_PUBLIC_MAPTILER_KEY;
 
   useEffect(()=>{
     try{setRows(JSON.parse(localStorage.getItem("airavat-test-attendance")||"[]"));}catch{}
@@ -61,7 +63,8 @@ export default function GuardPortal(){
       <div className="guard-profile"><div className="guard-avatar">{TEST_GUARD.name.slice(0,1)}</div><div><h1>{TEST_GUARD.name}</h1><p>{TEST_GUARD.id} · {TEST_GUARD.designation}</p><small>{TEST_GUARD.site} · {TEST_GUARD.shift}</small></div></div>
       <section className="guard-card attendance-card"><h2>{t.attendance}</h2>{already?<div className="guard-success">{t.already}</div>:<>
         {camera?<div className="camera-box"><video ref={videoRef} autoPlay playsInline muted/><button className="guard-primary" onClick={capture}>{t.take}</button></div>:selfie?<div className="selfie-preview"><img src={selfie} alt="Attendance selfie"/><button className="guard-outline" onClick={()=>void startCamera()}>{t.retake}</button></div>:<button className="big-attendance" onClick={()=>void startCamera()}>📷<span>{t.take}</span></button>}
-        <button className={loc?"guard-success":"guard-location"} onClick={getLocation}>{loc?"✓ Location captured":"📍 "+t.location}</button>\n        {loc&&<div className="location-details"><div><strong>GPS accuracy:</strong> {Math.round(loc.accuracy)} m</div>{address&&<div><strong>Address:</strong> {address}</div>}{mapKey&&<iframe title="Attendance location map" src={`https://api.maptiler.com/maps/streets-v4/?key=${encodeURIComponent(mapKey)}#15/${loc.lat}/${loc.lng}`} loading="lazy" className="guard-map"/>}<a className="guard-outline location-map-link" href={`https://www.openstreetmap.org/?mlat=${loc.lat}&mlon=${loc.lng}#map=18/${loc.lat}/${loc.lng}`} target="_blank" rel="noreferrer">Open Map</a></div>}
+        <button className={loc?"guard-success":"guard-location"} onClick={getLocation}>{loc?"✓ Location captured":"📍 "+t.location}</button>
+        {loc&&<div className="location-details"><div><strong>GPS accuracy:</strong> {Math.round(loc.accuracy)} m</div>{address&&<div><strong>Address:</strong> {address}</div>}{mapKey&&<iframe title="Attendance location map" src={`https://api.maptiler.com/maps/streets-v4/?key=${encodeURIComponent(mapKey)}#15/${loc.lat}/${loc.lng}`} loading="lazy" className="guard-map"/>}<a className="guard-outline location-map-link" href={`https://www.openstreetmap.org/?mlat=${loc.lat}&mlon=${loc.lng}#map=18/${loc.lat}/${loc.lng}`} target="_blank" rel="noreferrer">Open Map</a></div>}
         <button className="guard-primary full" disabled={busy} onClick={()=>void submit()}>{busy?"Saving...":t.submit}</button>
         {message&&<p className="guard-message">{message}</p>}
       </>}</section>
