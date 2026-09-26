@@ -21,13 +21,14 @@ export default function GuardPortal(){
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState("");
+  const [loadError,setLoadError]=useState("");
   const videoRef=useRef<HTMLVideoElement>(null);
   const streamRef=useRef<MediaStream|null>(null);
   const t=text[lang];
 
   const load=async()=>{
     const r=await fetch("/api/guard/session",{cache:"no-store"});
-    if(!r.ok){window.location.href="/";return;}
+    if(!r.ok){const data=await r.json().catch(()=>({}));setLoadError(data.error||"Guard portal could not load.");setLoading(false);return;}
     const data=await r.json();
     setGuard(data.guard);setRows(data.attendance??[]);setLoading(false);
   };
@@ -60,6 +61,7 @@ export default function GuardPortal(){
   };
 
   if(loading)return <main className="guard-shell"><div className="guard-card">{t.loading}</div></main>;
+  if(loadError)return <main className="guard-shell"><div className="guard-card"><h2>Guard Portal</h2><p className="guard-message">{loadError}</p><button className="guard-primary" onClick={()=>void load()}>Retry</button></div></main>;
   if(!guard)return null;
   const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
   const already=rows.some(r=>r.attendance_date===today);
