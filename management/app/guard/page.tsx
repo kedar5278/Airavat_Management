@@ -8,13 +8,13 @@ type Guard = { id:string; name:string; email:string; phone:string; designation:s
 type Attendance = { attendance_date:string; attendance_time:string|null; latitude:number|null; longitude:number|null; selfie_path:string|null; status:string };
 
 const text = {
-  en:{profile:"My Profile",attendance:"Mark Attendance",history:"My Attendance",present:"Present",done:"Attendance marked",login:"Continue with Google",logout:"Log out",take:"Take Selfie",retake:"Retake Selfie",location:"Get Current Location",submit:"Submit Attendance",already:"Attendance already marked today.",missing:"Please take a selfie and allow your current location.",notFound:"No active guard profile is linked to this Google account.",loading:"Loading..."},
-  gu:{profile:"મારી પ્રોફાઇલ",attendance:"હાજરી આપો",history:"મારી હાજરી",present:"હાજર",done:"હાજરી નોંધાઈ ગઈ",login:"Google થી ચાલુ રાખો",logout:"લૉગ આઉટ",take:"સેલ્ફી લો",retake:"ફરી સેલ્ફી લો",location:"વર્તમાન લોકેશન મેળવો",submit:"હાજરી સબમિટ કરો",already:"આજની હાજરી પહેલેથી નોંધાઈ છે.",missing:"કૃપા કરીને સેલ્ફી લો અને વર્તમાન લોકેશનની મંજૂરી આપો.",notFound:"આ Google એકાઉન્ટ સાથે કોઈ સક્રિય ગાર્ડ પ્રોફાઇલ જોડાયેલી નથી.",loading:"લોડ થઈ રહ્યું છે..."}
+  en:{profile:"My Profile",attendance:"Mark Attendance",history:"My Attendance",present:"Present",done:"Attendance marked",login:"Continue with Mobile OTP",sendOtp:"Send OTP",verify:"Verify OTP",phone:"Mobile number",otp:"Enter OTP",change:"Change number",logout:"Log out",take:"Take Selfie",retake:"Retake Selfie",location:"Get Current Location",submit:"Submit Attendance",already:"Attendance already marked today.",missing:"Please take a selfie and allow your current location.",notFound:"No active guard profile is linked to this mobile number.",invalidPhone:"Enter a valid 10-digit mobile number.",otpSent:"OTP sent to your mobile number.",loading:"Loading..."},
+  gu:{profile:"મારી પ્રોફાઇલ",attendance:"હાજરી આપો",history:"મારી હાજરી",present:"હાજર",done:"હાજરી નોંધાઈ ગઈ",login:"મોબાઇલ OTP થી ચાલુ રાખો",sendOtp:"OTP મોકલો",verify:"OTP ચકાસો",phone:"મોબાઇલ નંબર",otp:"OTP દાખલ કરો",change:"નંબર બદલો",logout:"લૉગ આઉટ",take:"સેલ્ફી લો",retake:"ફરી સેલ્ફી લો",location:"વર્તમાન લોકેશન મેળવો",submit:"હાજરી સબમિટ કરો",already:"આજની હાજરી પહેલેથી નોંધાઈ છે.",missing:"કૃપા કરીને સેલ્ફી લો અને વર્તમાન લોકેશનની મંજૂરી આપો.",notFound:"આ મોબાઇલ નંબર સાથે કોઈ સક્રિય ગાર્ડ પ્રોફાઇલ જોડાયેલી નથી.",invalidPhone:"10 અંકનો માન્ય મોબાઇલ નંબર દાખલ કરો.",otpSent:"તમારા મોબાઇલ નંબર પર OTP મોકલ્યો છે.",loading:"લોડ થઈ રહ્યું છે..."}
 };
 
 export default function GuardPortal(){
   const [lang,setLang]=useState<"en"|"gu">("en");
-  const [user,setUser]=useState<{email?:string;user_metadata?:{full_name?:string;avatar_url?:string}}|null>(null);
+  const [user,setUser]=useState<{phone?:string;email?:string}|null>(null);\n  const [phone,setPhone]=useState("");\n  const [otp,setOtp]=useState("");\n  const [otpSent,setOtpSent]=useState(false);\n  const [authBusy,setAuthBusy]=useState(false);
   const [guard,setGuard]=useState<Guard|null>(null);
   const [rows,setRows]=useState<Attendance[]>([]);
   const [selfie,setSelfie]=useState("");
@@ -30,9 +30,9 @@ export default function GuardPortal(){
   const load=async()=>{
     const sb=getSupabaseBrowserClient(); if(!sb){setLoading(false);return;}
     const {data:{user}}=await sb.auth.getUser();
-    setUser(user ? {email:user.email,user_metadata:user.user_metadata} : null);
+    setUser(user ? {phone:user.phone,email:user.email} : null);
     if(!user){setLoading(false);return;}
-    const {data:g}=await sb.from("guards").select("id,name,email,phone,designation,site,shift,status,photo_path").eq("email",user.email ?? "").eq("status","Active").maybeSingle();
+    const digits=(user.phone ?? "").replace(/\\D/g,"");\n    const last10=digits.length>=10?digits.slice(-10):digits;\n    const {data:allGuards}=await sb.from("guards").select("id,name,email,phone,designation,site,shift,status,photo_path").eq("status","Active");\n    const g=(allGuards ?? []).find((x:Guard)=>x.phone.replace(/\\D/g,"").slice(-10)===last10) ?? null;
     if(!g){setLoading(false);return;}
     setGuard(g);
     const {data:a}=await sb.from("guard_attendance").select("attendance_date,attendance_time,latitude,longitude,selfie_path,status").eq("guard_id",g.id).order("attendance_date",{ascending:false}).limit(90);
@@ -43,9 +43,25 @@ export default function GuardPortal(){
   useEffect(()=>{void load(); return ()=>{streamRef.current?.getTracks().forEach(x=>x.stop());};},[]);
   useEffect(()=>{if(camera && videoRef.current && streamRef.current) videoRef.current.srcObject=streamRef.current;},[camera]);
 
-  const login=async()=>{
+  const sendOtp=async()=>{
     const sb=getSupabaseBrowserClient(); if(!sb)return;
-    await sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin+"/guard"}});
+    const digits=phone.replace(/\\D/g,"");
+    if(digits.length!==10){setMessage(t.invalidPhone);return;}
+    setAuthBusy(true);setMessage("");
+    const {error}=await sb.auth.signInWithOtp({phone:"+91"+digits});
+    setAuthBusy(false);
+    if(error){setMessage(error.message);return;}
+    setOtpSent(true);setMessage(t.otpSent);
+  };
+  const verifyOtp=async()=>{
+    const sb=getSupabaseBrowserClient(); if(!sb)return;
+    const digits=phone.replace(/\\D/g,"");
+    if(digits.length!==10||otp.trim().length<4){setMessage(t.invalidPhone);return;}
+    setAuthBusy(true);setMessage("");
+    const {error}=await sb.auth.verifyOtp({phone:"+91"+digits,token:otp.trim(),type:"sms"});
+    setAuthBusy(false);
+    if(error){setMessage(error.message);return;}
+    await load();
   };
   const startCamera=async()=>{
     try{const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:false});streamRef.current=s;setCamera(true);}catch{setMessage("Camera permission is required.");}
@@ -78,7 +94,9 @@ export default function GuardPortal(){
   };
 
   if(loading)return <main className="guard-shell"><div className="guard-card">{t.loading}</div></main>;
-  if(!user)return <main className="guard-shell"><div className="guard-card guard-login-card"><div className="guard-logo">A</div><h1>AIRAVAT</h1><p>Guard Attendance Portal</p><button className="guard-google" onClick={login}>G&nbsp; {t.login}</button></div></main>;
+  if(!user)return <main className="guard-shell"><div className="guard-card guard-login-card"><div className="guard-logo">A</div><h1>AIRAVAT</h1><p>Guard Attendance Portal</p>
+    {!otpSent?<><label className="guard-label">{t.phone}</label><input className="guard-input" inputMode="numeric" maxLength={10} value={phone} onChange={e=>setPhone(e.target.value.replace(/\\D/g,""))} placeholder="9876543210"/><button className="guard-primary full" disabled={authBusy} onClick={()=>void sendOtp()}>{authBusy?"Sending...":t.sendOtp}</button></>:<><label className="guard-label">{t.otp}</label><input className="guard-input" inputMode="numeric" maxLength={6} value={otp} onChange={e=>setOtp(e.target.value.replace(/\\D/g,""))} placeholder="123456"/><button className="guard-primary full" disabled={authBusy} onClick={()=>void verifyOtp()}>{authBusy?"Verifying...":t.verify}</button><button className="guard-outline full" onClick={()=>{setOtpSent(false);setOtp("");setMessage("")}}>{t.change}</button></>}
+    {message&&<p className="guard-message">{message}</p>}</div></main>;
   if(!guard)return <main className="guard-shell"><div className="guard-card"><h2>{t.notFound}</h2><button className="guard-outline" onClick={()=>getSupabaseBrowserClient()?.auth.signOut().then(()=>window.location.reload())}>{t.logout}</button></div></main>;
 
   const today=new Date().toISOString().slice(0,10);
