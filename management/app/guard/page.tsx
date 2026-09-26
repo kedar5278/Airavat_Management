@@ -79,12 +79,12 @@ export default function GuardPortal(){
 
   if(loading)return <main className="guard-shell"><div className="guard-card">{t.loading}</div></main>;
   if(!user)return <main className="guard-shell"><div className="guard-card guard-login-card"><div className="guard-logo">A</div><h1>AIRAVAT</h1><p>Guard Attendance Portal</p><button className="guard-google" onClick={login}>G&nbsp; {t.login}</button></div></main>;
-  if(!guard)return <main className="guard-shell"><div className="guard-card"><h2>{t.notFound}</h2><button className="guard-outline" onClick={()=>getSupabaseBrowserClient()?.auth.signOut().then(()=>location.reload())}>{t.logout}</button></div></main>;
+  if(!guard)return <main className="guard-shell"><div className="guard-card"><h2>{t.notFound}</h2><button className="guard-outline" onClick={()=>getSupabaseBrowserClient()?.auth.signOut().then(()=>window.location.reload())}>{t.logout}</button></div></main>;
 
   const today=new Date().toISOString().slice(0,10);
   const already=rows.some(r=>r.attendance_date===today);
   return <main className="guard-shell">
-    <header className="guard-top"><div><strong>AIRAVAT</strong><span>Security Guard Portal</span></div><div className="guard-top-actions"><button onClick={()=>setLang(lang==="en"?"gu":"en")}>{lang==="en"?"ગુજરાતી":"English"}</button><button onClick={()=>getSupabaseBrowserClient()?.auth.signOut().then(()=>location.reload())}>{t.logout}</button></div></header>
+    <header className="guard-top"><div><strong>AIRAVAT</strong><span>Security Guard Portal</span></div><div className="guard-top-actions"><button onClick={()=>setLang(lang==="en"?"gu":"en")}>{lang==="en"?"ગુજરાતી":"English"}</button><button onClick={()=>getSupabaseBrowserClient()?.auth.signOut().then(()=>window.location.reload())}>{t.logout}</button></div></header>
     <section className="guard-wrap">
       <div className="guard-profile"><div className="guard-avatar">{guard.name.slice(0,1).toUpperCase()}</div><div><h1>{guard.name}</h1><p>{guard.id} · {guard.designation}</p><small>{guard.site||"Site not assigned"} · {guard.shift}</small></div></div>
       <section className="guard-card attendance-card"><h2>{t.attendance}</h2>{already?<div className="guard-success">{t.already}</div>:<>
