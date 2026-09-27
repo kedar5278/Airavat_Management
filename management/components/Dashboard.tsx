@@ -4,7 +4,7 @@ import type { Guard, View } from "./management-types";
 import PageHeading from "./PageHeading";
 import Metric from "./Metric";
 
-function Dashboard({ guards, active, onNavigate }: { guards: Guard[]; active: number; onNavigate: (v: View) => void }) {
+export default function Dashboard({ guards, active, onNavigate }: { guards: Guard[]; active: number; onNavigate: (v: View) => void }) {
   const cards: { icon: string; badge: string; title: string; description: string; action: string; page: View; color: string }[] = [
     { icon: "♙+", badge: "REGISTRATION", title: "Register New Guard", description: "Enroll guards with full profile details, shift assignment, and deployment information.", action: "Open Registration Form", page: "Register Guard", color: "blue" },
     { icon: "♙", badge: "PERSONNEL", title: "Guard Roster & Profiles", description: "Search the active roster, filter by status, and manage guard profiles.", action: "View Guard List", page: "Guard List", color: "blue" },
