@@ -20,7 +20,7 @@ export async function GET(){
   try{
     const {guard,error}=await getGuardForUser();
     if(error)return NextResponse.json({error},{status:401});
-    if(!guard)return NextResponse.json({error:"This Gmail is not registered as an active guard."},{status:403});
+    if(!guard)return NextResponse.json({error:`No active guard found for Clerk email: ${user?.primaryEmailAddress?.emailAddress ?? "no email"}. Register the guard with the same email in Supabase.`},{status:403});
     const sb=getSupabaseAdminClient();
     const result=await sb.from("guard_attendance").select("attendance_date,attendance_time,latitude,longitude,accuracy,address,selfie_path,status").eq("guard_id",guard.id).order("attendance_date",{ascending:false});
     if(result.error)throw result.error;
