@@ -7,7 +7,7 @@ import { today } from "./management-utils";
 import PageHeading from "./PageHeading";
 import Field from "./Field";
 
-function RegisterGuard({ onSave, onCancel }: { onSave: (g: Guard) => Promise<void>; onCancel: () => void }) {
+export default function RegisterGuard({ onSave, onCancel }: { onSave: (g: Guard) => Promise<void>; onCancel: () => void }) {
   const [photo, setPhoto] = useState(""); const [workType, setWorkType] = useState("Permanent"); const [shift, setShift] = useState("Day Shift"); const [error, setError] = useState(""); const [saving, setSaving] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null); const cameraStreamRef = useRef<MediaStream | null>(null); const fileInputRef = useRef<HTMLInputElement>(null); const [cameraOpen, setCameraOpen] = useState(false);
   const progress = 14;
