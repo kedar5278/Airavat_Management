@@ -1,5 +1,5 @@
 {
-  "name": "management",
+  "name": "clerk-nextjs",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,10 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.9.7",
-    "@supabase/ssr": "^0.12.7",
-    "@supabase/supabase-js": "^2.117.1",
-    "jspdf": "^4.2.1",
     "next": "16.3.6",
     "react": "19.2.8",
     "react-dom": "19.2.8"
