@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
-function Login({ ready, onLogin }: { ready: boolean; onLogin: (id: string, password: string) => Promise<void> }) {
+export default function Login({ ready, onLogin }: { ready: boolean; onLogin: (id: string, password: string) => Promise<void> }) {
   const [mode,setMode]=useState<"admin"|"guard">("admin");
   const [username,setUsername]=useState(""); const [password,setPassword]=useState(""); const [error,setError]=useState(""); const [show,setShow]=useState(false); const [pending,setPending]=useState(false);
   const [hydrated,setHydrated]=useState(false);
