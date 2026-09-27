@@ -1,0 +1,1 @@
+function Metric({ label, value, note, icon, tone }: { label: string; value: number; note: string; icon: string; tone: string }) { return <div className="metric"><div><span className="metric-label">{label}</span><strong className={`metric-value ${tone}`}>{value}</strong><small>{note}</small></div><span className={`metric-icon ${tone}`}>{icon}</span></div>; }
