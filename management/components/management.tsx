@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { jsPDF } from "jspdf";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import ClerkGuardProfiles from "@/components/ClerkGuardProfiles";
 
 type Guard = { id: string; name: string; phone: string; email: string; aadhaar: string; gender: string; dob: string; address: string; designation: string; site: string; salary: number; joinDate: string; status: "Active" | "Inactive"; shift: string; workType: string; photo?: string };
 type Invoice = { id: string; client: string; amount: number; date: string; status: string; description: string };
@@ -96,7 +97,7 @@ export default function ManagementApp() {
     </aside>
     <main className="main-area"><header className="mobile-head"><Image src="/airavat-logo-navy.jpg" alt="Airavat Security Service logo" width={36} height={36} className="brand-logo" /><strong>AIRAVAT</strong></header>
       {view === "Dashboard" && <Dashboard guards={guards} active={active} onNavigate={go} />}
-      {view === "Guard List" && <Roster guards={filtered} allCount={guards.length} active={active} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} onAdd={() => go("Register Guard")} onSelect={setSelected} onToggle={g => setGuards(prev => prev.map(x => x.id === g.id ? { ...x, status: x.status === "Active" ? "Inactive" : "Active" } : x))} onDelete={g => { if (window.confirm(`Delete ${g.name} from the roster?`)) { setGuards(prev => prev.filter(x => x.id !== g.id)); const sb = getSupabaseBrowserClient(); if (sb) void sb.from("guards").delete().eq("id", g.id); } }} />}
+      {view === "Guard List" && <><Roster guards={filtered} allCount={guards.length} active={active} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} onAdd={() => go("Register Guard")} onSelect={setSelected} onToggle={g => setGuards(prev => prev.map(x => x.id === g.id ? { ...x, status: x.status === "Active" ? "Inactive" : "Active" } : x))} onDelete={g => { if (window.confirm(`Delete ${g.name} from the roster?`)) { setGuards(prev => prev.filter(x => x.id !== g.id)); const sb = getSupabaseBrowserClient(); if (sb) void sb.from("guards").delete().eq("id", g.id); } }} /></><ClerkGuardProfiles /></>}
       {view === "Register Guard" && <RegisterGuard onSave={async g => { const sb = getSupabaseBrowserClient(); if (!sb) throw new Error("Supabase is not configured."); if (g.photo?.startsWith("data:")) { const blob = await (await fetch(g.photo)).blob(); const path = `${g.id}/${Date.now()}.jpg`; const { error } = await sb.storage.from("guard-photos").upload(path, blob, { contentType: blob.type || "image/jpeg", upsert: true }); if (error) throw error; g.photo = path; } const { error } = await sb.from("guards").insert(guardToRow(g)); if (error) throw error; setGuards(prev => [g, ...prev]); flash(`${g.name} registered successfully.`); go("Guard List"); }} onCancel={() => go("Guard List")} />}
       {view === "Attendance" && <AttendancePage guards={guards} attendance={attendance} setAttendance={setAttendance} date={attendanceDate} setDate={setAttendanceDate} />}
       {view === "Invoices" && <InvoicesPage invoices={invoices} onNew={() => setInvoiceForm(true)} />}
