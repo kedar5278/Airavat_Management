@@ -91,7 +91,7 @@ export default function ManagementApp() {
   return <div className="app-shell">
     <aside className="sidebar">
       <div className="brand"><Image src="/airavat-logo-navy.jpg" alt="Airavat Security Service logo" width={44} height={44} className="brand-logo" /><div><strong>AIRAVAT</strong><small>Security Management</small></div></div>
-      <div className="side-label">MAIN MENU</div>
+      <div className="side-label">MAIN MENU</div><button className="nav-item" onClick={() => flash("Button is working.")}><span>✓</span>Test Button</button>
       {([ ["Dashboard", "▦"], ["Guard List", "♙"], ["Register Guard", "＋"], ["Attendance", "▣"], ["Invoices", "▤"] ] as [View,string][]).map(([item, icon]) => <button key={item} onClick={() => go(item)} className={`nav-item ${view === item ? "nav-active" : ""}`}><span>{icon}</span>{item}{view === item && <i />}</button>)}
       <div className="sidebar-bottom"><div className="user-chip"><div className="avatar admin-avatar">A</div><div><strong>Administrator</strong><small>admin@airavat.in</small></div></div><button className="logout" onClick={logout}>↪ &nbsp; Log out</button></div>
     </aside>
