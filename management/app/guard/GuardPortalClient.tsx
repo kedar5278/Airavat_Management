@@ -23,10 +23,15 @@ export default function GuardPortalClient(){
 
   const load=async()=>{
     setLoading(true);setMessage("");
-    const r=await fetch("/api/guard/attendance",{cache:"no-store"});
-    const d=await r.json();
-    if(!r.ok){setMessage(d.error||"Could not load guard profile.");setLoading(false);return;}
-    setGuard(d.guard);setAttendance(d.attendance||[]);setLoading(false);
+    try{
+      const r=await fetch("/api/guard/attendance",{cache:"no-store"});
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok){setMessage(d.error||`Guard data request failed (HTTP ${r.status}).`);setLoading(false);return;}
+      setGuard(d.guard);setAttendance(d.attendance||[]);setLoading(false);
+    }catch(cause){
+      setMessage(cause instanceof Error?cause.message:"Could not connect to the guard data service.");
+      setLoading(false);
+    }
   };
   useEffect(()=>{void load();return()=>streamRef.current?.getTracks().forEach(x=>x.stop());},[]);
   useEffect(()=>{if(camera&&videoRef.current&&streamRef.current)videoRef.current.srcObject=streamRef.current;},[camera]);
