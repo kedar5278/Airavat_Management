@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
-function GuardPhoto({ path, label, className }: { path?: string; label: string; className: string }) {
+export default function GuardPhoto({ path, label, className }: { path?: string; label: string; className: string }) {
   const [resolved, setResolved] = useState<{ path: string; src: string } | null>(null);
   useEffect(() => {
     if (!path || path.startsWith("data:") || path.startsWith("http")) return;
