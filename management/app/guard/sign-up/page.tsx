@@ -8,8 +8,7 @@ export default function GuardSignUpPage() {
         <span>Security Guard Registration</span>
       </div>
       <SignUp
-        routing="path"
-        path="/guard/sign-up"
+        routing="hash"
         signInUrl="/guard/sign-in"
         forceRedirectUrl="/guard"
         appearance={{ elements: { card: "guard-clerk-card" } }}
