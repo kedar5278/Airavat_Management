@@ -14,6 +14,7 @@ export default function AttendancePage({ guards, attendance, setAttendance, date
   const [selectedGuardId,setSelectedGuardId] = useState<string|null>(null);
   const selectedGuard = selectedGuardId ? guards.find(g => g.id === selectedGuardId) ?? null : null;
   const selectedEvidence = selectedGuardId ? evidence.find(r => r.guard_id === selectedGuardId) ?? null : null;
+  const selectedMonth = /^\\d{4}-\\d{2}-\\d{2}$/.test(date) ? date.slice(0, 7) : "";
   const day = attendance[date] ?? {};
   const count = (s: string) => Object.values(day).filter(x => x === s).length;
   const mark = (id: string, status: "Present" | "Absent" | "Leave") => setAttendance({ ...attendance, [date]: { ...day, [id]: status } });
@@ -33,7 +34,7 @@ export default function AttendancePage({ guards, attendance, setAttendance, date
       return id;
     };
     setMonthlyLoading(true);
-    void fetch("/api/admin/attendance-details?month="+encodeURIComponent(date.slice(0,7))+"&guardId="+encodeURIComponent(selectedGuardId)+"&deviceId="+encodeURIComponent(getDeviceId()), { cache: "no-store" })
+    void fetch("/api/admin/attendance-details?month="+encodeURIComponent(selectedMonth)+"&guardId="+encodeURIComponent(selectedGuardId)+"&deviceId="+encodeURIComponent(getDeviceId()), { cache: "no-store" })
       .then(async response => {
         const payload = await response.json().catch(() => ({}));
         if (!cancelled) setMonthlyEvidence(response.ok ? (payload.evidence ?? []) : []);
@@ -41,7 +42,7 @@ export default function AttendancePage({ guards, attendance, setAttendance, date
       .catch(() => { if (!cancelled) setMonthlyEvidence([]); })
       .finally(() => { if (!cancelled) setMonthlyLoading(false); });
     return () => { cancelled = true; };
-  }, [selectedGuardId, date]);
+  }, [selectedGuardId, selectedMonth]);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,7 +98,7 @@ export default function AttendancePage({ guards, attendance, setAttendance, date
       </div>
       <div className="attendance-month-summary">
         <strong>{monthlyEvidence.length} attendance record{monthlyEvidence.length === 1 ? "" : "s"}</strong>
-        <span>{new Date(date+"-01T00:00:00").toLocaleDateString("en-IN",{month:"long",year:"numeric"})}</span>
+        <span>{selectedMonth ? new Date(selectedMonth+"-01T00:00:00").toLocaleDateString("en-IN",{month:"long",year:"numeric"}) : "Select a valid date"}</span>
       </div>
       {monthlyLoading ? <div className="empty-state">Loading monthly attendance...</div> : monthlyEvidence.length ? (
         <div className="table-wrap monthly-attendance-table">
