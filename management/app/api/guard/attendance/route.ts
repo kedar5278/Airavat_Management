@@ -97,7 +97,7 @@ export async function POST(request:Request){
     const body=await request.json() as {selfie?:string;latitude?:number;longitude?:number;accuracy?:number;address?:string};
     if(!body.selfie||typeof body.latitude!=="number"||typeof body.longitude!=="number")return NextResponse.json({error:"Selfie and current location are required."},{status:400});
     if(!Number.isFinite(body.latitude)||!Number.isFinite(body.longitude)||!Number.isFinite(body.accuracy??0))return NextResponse.json({error:"Invalid location data."},{status:400});
-    const sb=getSupabaseAdminClient();
+    const sb=getSupabaseAdminClient() as any;
     const date=todayIndia();
     const existing=await sb.from("guard_attendance").select("guard_id").eq("guard_id",guard.id).eq("attendance_date",date).maybeSingle();
     if(existing.error)throw existing.error;
