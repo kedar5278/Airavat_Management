@@ -70,10 +70,22 @@ export async function POST(request:Request){
     if(bytes.length>4000000)return NextResponse.json({error:"Selfie is too large."},{status:413});
     const ext=mime==="image/png"?"png":mime==="image/webp"?"webp":"jpg";
     const path=guard.id+"/"+date+"-"+Date.now()+"."+ext;
-    const upload=await sb.storage.from("guard-attendance-selfies").upload(path,bytes,{contentType:mime,upsert:false});
+    const bucket = sb.storage.from("guard-attendance-selfies");
+    const bucketCheck = await bucket.list("", { limit: 1 });
+    if (bucketCheck.error && /bucket not found/i.test(bucketCheck.error.message)) {
+      const created = await sb.storage.createBucket("guard-attendance-selfies", {
+        public: false,
+        fileSizeLimit: 4000000,
+        allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+      });
+      if (created.error && !/already exists/i.test(created.error.message)) throw created.error;
+    } else if (bucketCheck.error) {
+      throw bucketCheck.error;
+    }
+    const upload=await bucket.upload(path,bytes,{contentType:mime,upsert:false});
     if(upload.error)throw upload.error;
     const insert=await sb.from("guard_attendance").insert({guard_id:guard.id,attendance_date:date,status:"Present",attendance_time:new Date().toISOString(),latitude:body.latitude,longitude:body.longitude,accuracy:body.accuracy??null,address:body.address?.slice(0,500)||null,selfie_path:path,marked_by_clerk_user_id:userId});
-    if(insert.error){await sb.storage.from("guard-attendance-selfies").remove([path]);throw insert.error;}
+    if(insert.error){await bucket.remove([path]);throw insert.error;}
     return NextResponse.json({ok:true});
   }catch(error){
     return NextResponse.json({error:errorMessage(error)},{status:503});
