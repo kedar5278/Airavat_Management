@@ -70,20 +70,26 @@ export async function POST(request:Request){
     if(bytes.length>4000000)return NextResponse.json({error:"Selfie is too large."},{status:413});
     const ext=mime==="image/png"?"png":mime==="image/webp"?"webp":"jpg";
     const path=guard.id+"/"+date+"-"+Date.now()+"."+ext;
-    const bucket = sb.storage.from("guard-attendance-selfies");
-    const bucketCheck = await bucket.list("", { limit: 1 });
-    if (bucketCheck.error && /bucket not found/i.test(bucketCheck.error.message)) {
-      const created = await sb.storage.createBucket("guard-attendance-selfies", {
+    const bucketName = "guard-attendance-selfies";
+    let bucket = sb.storage.from(bucketName);
+    let upload = await bucket.upload(path, bytes, { contentType: mime, upsert: false });
+
+    if (upload.error && /bucket not found/i.test(upload.error.message)) {
+      const created = await sb.storage.createBucket(bucketName, {
         public: false,
         fileSizeLimit: 4000000,
         allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
       });
-      if (created.error && !/already exists/i.test(created.error.message)) throw created.error;
-    } else if (bucketCheck.error) {
-      throw bucketCheck.error;
+      if (created.error && !/already exists/i.test(created.error.message)) {
+        throw new Error(`Could not create attendance photo storage bucket: ${created.error.message}`);
+      }
+
+      // Recreate the storage client after creating the bucket, then retry once.
+      bucket = sb.storage.from(bucketName);
+      upload = await bucket.upload(path, bytes, { contentType: mime, upsert: false });
     }
-    const upload=await bucket.upload(path,bytes,{contentType:mime,upsert:false});
-    if(upload.error)throw upload.error;
+
+    if (upload.error) throw upload.error;
     const insert=await sb.from("guard_attendance").insert({guard_id:guard.id,attendance_date:date,status:"Present",attendance_time:new Date().toISOString(),latitude:body.latitude,longitude:body.longitude,accuracy:body.accuracy??null,address:body.address?.slice(0,500)||null,selfie_path:path,marked_by_clerk_user_id:userId});
     if(insert.error){await bucket.remove([path]);throw insert.error;}
     return NextResponse.json({ok:true});
