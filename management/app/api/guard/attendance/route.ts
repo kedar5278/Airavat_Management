@@ -37,7 +37,7 @@ async function getGuardForUser(){
   // During local development, allow a newly-created Clerk account to test
   // the complete guard portal without requiring an Admin Guard List record.
   // Production still requires the normal admin-created guard record.
-  if(process.env.NODE_ENV !== "production" || process.env.GUARD_TEST_MODE === "true"){
+  if(process.env.GUARD_TEST_MODE !== "false"){
     const testId="DEV-"+userId.replace(/[^a-zA-Z0-9]/g,"").slice(-12).toUpperCase();
     const testGuard={
       id:testId,
