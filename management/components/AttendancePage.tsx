@@ -17,20 +17,38 @@ export default function AttendancePage({ guards, attendance, setAttendance, date
   const mark = (id: string, status: "Present" | "Absent" | "Leave") => setAttendance({ ...attendance, [date]: { ...day, [id]: status } });
 
   useEffect(() => {
-    const sb = getSupabaseBrowserClient(); if (!sb) return;
     let cancelled = false;
-    void sb.from("guard_attendance").select("guard_id,attendance_time,latitude,longitude,accuracy,address,selfie_path,status").eq("attendance_date",date).then(async ({data,error}) => {
-      if (cancelled || error) return;
-      setEvidence(data ?? []);
-      const signed: Record<string,string> = {};
-      for (const row of data ?? []) {
-        if (row.selfie_path) {
-          const result = await sb.storage.from("guard-attendance-selfies").createSignedUrl(row.selfie_path,300);
-          if (result.data?.signedUrl) signed[row.guard_id] = result.data.signedUrl;
-        }
+    const getDeviceId = () => {
+      let id = window.localStorage.getItem("airavat-device-id");
+      if (!id) {
+        id = crypto.randomUUID();
+        window.localStorage.setItem("airavat-device-id", id);
       }
-      if (!cancelled) setSelfies(signed);
-    });
+      return id;
+    };
+    void fetch("/api/admin/attendance-details?date="+encodeURIComponent(date)+"&deviceId="+encodeURIComponent(getDeviceId()), { cache: "no-store" })
+      .then(async response => {
+        const payload = await response.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!response.ok) {
+          setEvidence([]);
+          setSelfies({});
+          return;
+        }
+        const rows = payload.evidence ?? [];
+        setEvidence(rows);
+        const signed: Record<string,string> = {};
+        for (const row of rows) {
+          if (row.selfie_url) signed[row.guard_id] = row.selfie_url;
+        }
+        setSelfies(signed);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setEvidence([]);
+          setSelfies({});
+        }
+      });
     return () => { cancelled = true; };
   }, [date]);
 
