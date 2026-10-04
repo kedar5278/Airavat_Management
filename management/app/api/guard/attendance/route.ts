@@ -21,7 +21,7 @@ async function getGuardForUser(){
   const email=user?.primaryEmailAddress?.emailAddress?.trim().toLowerCase();
   if(!email)return {userId,guard:null,email:null,error:"Your Clerk account has no email address."};
 
-  const sb=getSupabaseAdminClient();
+  const sb=getSupabaseAdminClient() as any;
   const result=await sb
     .from("guards")
     .select("id,name,email,phone,designation,site,shift,work_type,status,address,join_date,dob")
