@@ -9,6 +9,9 @@ import Metric from "./Metric";
 export default function AttendancePage({ guards, attendance, setAttendance, date, setDate }: { guards: Guard[]; attendance: Attendance; setAttendance: (a: Attendance) => void; date: string; setDate: (d: string) => void }) {
   const [evidence,setEvidence] = useState<Array<{guard_id:string;attendance_time:string|null;latitude:number|null;longitude:number|null;accuracy:number|null;address:string|null;selfie_path:string|null;status:string}>>([]);
   const [selfies,setSelfies] = useState<Record<string,string>>({});
+  const [selectedGuardId,setSelectedGuardId] = useState<string|null>(null);
+  const selectedGuard = selectedGuardId ? guards.find(g => g.id === selectedGuardId) ?? null : null;
+  const selectedEvidence = selectedGuardId ? evidence.find(r => r.guard_id === selectedGuardId) ?? null : null;
   const day = attendance[date] ?? {};
   const count = (s: string) => Object.values(day).filter(x => x === s).length;
   const mark = (id: string, status: "Present" | "Absent" | "Leave") => setAttendance({ ...attendance, [date]: { ...day, [id]: status } });
