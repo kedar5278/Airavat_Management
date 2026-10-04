@@ -3,6 +3,16 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const todayIndia=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+function errorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object") {
+    const value = error as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
+    const parts = [value.message, value.details, value.hint, value.code].filter((part): part is string => typeof part === "string" && part.length > 0);
+    if (parts.length) return parts.join(" | ");
+  }
+  return String(error || "Unknown guard data error.");
+}
+
 
 async function getGuardForUser(){
   const {userId}=await auth();
@@ -35,7 +45,7 @@ export async function GET(){
     }
     return NextResponse.json({guard,attendance,today:todayIndia()});
   }catch(error){
-    const detail=error instanceof Error?error.message:"Unknown guard data error.";
+    const detail=errorMessage(error);
     console.error("[guard/attendance GET]",detail);
     return NextResponse.json({error:`Could not load guard data: ${detail}`},{status:503});
   }
@@ -66,6 +76,6 @@ export async function POST(request:Request){
     if(insert.error){await sb.storage.from("guard-attendance-selfies").remove([path]);throw insert.error;}
     return NextResponse.json({ok:true});
   }catch(error){
-    return NextResponse.json({error:error instanceof Error?error.message:"Attendance could not be saved."},{status:503});
+    return NextResponse.json({error:errorMessage(error)},{status:503});
   }
 }
