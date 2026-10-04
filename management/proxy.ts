@@ -4,7 +4,8 @@ export default clerkMiddleware();
 
 export const config = {
   matcher: [
-    "/guard(.*)",
-    "/api/guard(.*)",
+    "/guard/:path*",
+    "/api/guard/:path*",
+    "/__clerk/:path*",
   ],
 };
