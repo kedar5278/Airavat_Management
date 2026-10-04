@@ -25,6 +25,7 @@ export default function ManagementApp() {
   const [authReady, setAuthReady] = useState(false);
   const [view, setView] = useState<View>("Dashboard");
   const [loggedIn, setLoggedIn] = useState(false);
+  const [sessionChecking, setSessionChecking] = useState(true);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("All");
   const [selected, setSelected] = useState<Guard | null>(null);
@@ -36,14 +37,18 @@ export default function ManagementApp() {
   useEffect(() => {
     let mounted = true;
     const supabase = getSupabaseBrowserClient();
-    if (!supabase) { queueMicrotask(() => setAuthReady(true)); return; }
+    if (!supabase) { if (mounted) { setAuthReady(true); setSessionChecking(false); } return; }
     void (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!mounted || !user) { setAuthReady(true); return; }
-      const heartbeat = await fetch("/api/admin/heartbeat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deviceId: getDeviceId() }) });
-      if (mounted) setLoggedIn(heartbeat.ok);
-      setAuthReady(true);
-    })().catch(() => { if (mounted) setAuthReady(true); });
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!mounted) return;
+        if (!user) { setLoggedIn(false); setAuthReady(true); setSessionChecking(false); return; }
+        const heartbeat = await fetch("/api/admin/heartbeat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deviceId: getDeviceId() }), cache: "no-store" });
+        if (mounted) { setLoggedIn(heartbeat.ok); setAuthReady(true); setSessionChecking(false); }
+      } catch {
+        if (mounted) { setLoggedIn(false); setAuthReady(true); setSessionChecking(false); }
+      }
+    })();
     return () => { mounted = false; };
   }, []);
   useEffect(() => {
@@ -84,6 +89,7 @@ export default function ManagementApp() {
   const go = (next: View) => { setSelected(null); setView(next); };
   const logout = () => { void fetch("/api/admin/logout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deviceId: getDeviceId() }) }); setLoggedIn(false); setDatabaseReady(false); };
 
+  if (sessionChecking) return <div className="login-screen"><div className="login-brand"><Image src="/airavat-logo-navy.jpg" alt="Airavat Security Service" width={112} height={108} className="login-logo"/><h1>AIRAVAT</h1><div className="gold-kicker">SECURITY SERVICE</div><p>સર્વદા શક્તિશાળી</p></div><div className="login-card login-hydrating" role="status">Checking secure session…</div><p className="login-footer">© 2026 Airavat Security Service · Jamnagar, Gujarat</p></div>;
   if (!loggedIn) return <Login ready={authReady} onLogin={async (id, password) => {
     const response = await fetch("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, password, deviceId: getDeviceId(), deviceName: navigator.userAgent }) });
     const result = await response.json().catch(() => ({}));
