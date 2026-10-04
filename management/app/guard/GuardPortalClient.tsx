@@ -113,20 +113,18 @@ export default function GuardPortalClient() {
       async (p) => {
         const next = { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy };
         setLoc(next);
-        if (mapKey) {
-          try {
-            const r = await fetch(
-              "https://api.maptiler.com/geocoding/" +
-                next.lng +
-                "," +
-                next.lat +
-                ".json?language=en&key=" +
-                encodeURIComponent(mapKey),
-            );
-            const d = await r.json();
-            setAddress(d?.features?.[0]?.place_name || d?.features?.[0]?.text || "");
-          } catch {}
-        }
+        try {
+          const r = await fetch(
+            "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" +
+              encodeURIComponent(next.lat) +
+              "&lon=" +
+              encodeURIComponent(next.lng) +
+              "&zoom=18&addressdetails=1",
+            { headers: { Accept: "application/json" } },
+          );
+          const d = await r.json();
+          setAddress(d?.display_name || "");
+        } catch {}
       },
       () => setMessage("Location permission is required."),
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
