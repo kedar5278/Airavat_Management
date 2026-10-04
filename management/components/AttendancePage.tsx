@@ -7,7 +7,7 @@ import PageHeading from "./PageHeading";
 import Metric from "./Metric";
 
 export default function AttendancePage({ guards, attendance, setAttendance, date, setDate }: { guards: Guard[]; attendance: Attendance; setAttendance: (a: Attendance) => void; date: string; setDate: (d: string) => void }) {
-  const [evidence,setEvidence] = useState<Array<{guard_id:string;attendance_time:string|null;latitude:number|null;longitude:number|null;accuracy:number|null;address:string|null;selfie_path:string|null;status:string}>>([]);
+  const [evidence,setEvidence] = useState<Array<{guard_id:string;attendance_date:string;attendance_time:string|null;latitude:number|null;longitude:number|null;accuracy:number|null;address:string|null;selfie_path:string|null;selfie_url:string|null;status:string}>>([]);
   const [selfies,setSelfies] = useState<Record<string,string>>({});
   const [monthlyEvidence,setMonthlyEvidence] = useState<typeof evidence>([]);
   const [monthlyLoading,setMonthlyLoading] = useState(false);
