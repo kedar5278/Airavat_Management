@@ -8,8 +8,7 @@ export default function GuardSignInPage() {
         <span>Security Guard Portal</span>
       </div>
       <SignIn
-        routing="path"
-        path="/guard/sign-in"
+        routing="hash"
         signUpUrl="/guard/sign-up"
         forceRedirectUrl="/guard"
         appearance={{ elements: { card: "guard-clerk-card" } }}
