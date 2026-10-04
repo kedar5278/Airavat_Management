@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser";\nimport type { Guard } from "./management-types";\nimport { jsPDF } from "jspdf";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import type { Guard } from "./management-types";
+import { jsPDF } from "jspdf";
 
 export default function GuardPhoto({ path, label, className }: { path?: string; label: string; className: string }) {
   const [resolved, setResolved] = useState<{ path: string; src: string } | null>(null);
