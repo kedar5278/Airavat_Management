@@ -6,10 +6,10 @@ const todayIndia=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",ye
 
 async function getGuardForUser(){
   const {userId}=await auth();
-  if(!userId)return {userId:null,guard:null,error:"Unauthorized"};
+  if(!userId)return {userId:null,guard:null,email:null,error:"Unauthorized"};
   const user=await currentUser();
   const email=user?.primaryEmailAddress?.emailAddress?.trim().toLowerCase();
-  if(!email)return {userId,guard:null,error:"Your Google account has no email address."};
+  if(!email)return {userId,guard:null,email:null,error:"Your Clerk account has no email address."};
   const sb=getSupabaseAdminClient();
   const result=await sb.from("guards").select("id,name,email,phone,designation,site,shift,work_type,status,address,join_date,dob").ilike("email",email).eq("status","Active").maybeSingle();
   if(result.error)throw result.error;
