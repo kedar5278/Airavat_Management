@@ -172,19 +172,7 @@ export default function GuardPortalClient() {
   const alreadyToday = attendance.some(
     (x) => x.attendance_date === new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date()),
   );
-  const mapSrc =
-    loc && mapKey
-      ? "https://api.maptiler.com/maps/streets-v4/static/" +
-        loc.lng +
-        "," +
-        loc.lat +
-        ",16/800x320.png?key=" +
-        encodeURIComponent(mapKey) +
-        "&markers=" +
-        loc.lng +
-        "," +
-        loc.lat
-      : "";
+  const mapSrc = "";
 
   if (loading) {
     return <main className="guard-shell"><div className="guard-loading">Loading guard portal...</div></main>;
@@ -273,7 +261,7 @@ export default function GuardPortalClient() {
                   <div className="location-details">
                     <div><strong>GPS accuracy:</strong> ±{Math.round(loc.accuracy)} m</div>
                     {address && <div><strong>Address:</strong> {address}</div>}
-                    {mapSrc && <img className="guard-map" src={mapSrc} alt="Captured attendance location map" />}
+                    
                     <a
                       className="guard-outline location-map-link"
                       href={"https://www.openstreetmap.org/?mlat=" + loc.lat + "&mlon=" + loc.lng + "#map=18/" + loc.lat + "/" + loc.lng}
