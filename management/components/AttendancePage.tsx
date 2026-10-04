@@ -14,7 +14,7 @@ export default function AttendancePage({ guards, attendance, setAttendance, date
   const [selectedGuardId,setSelectedGuardId] = useState<string|null>(null);
   const selectedGuard = selectedGuardId ? guards.find(g => g.id === selectedGuardId) ?? null : null;
   const selectedEvidence = selectedGuardId ? evidence.find(r => r.guard_id === selectedGuardId) ?? null : null;
-  const selectedMonth = /^\\d{4}-\\d{2}-\\d{2}$/.test(date) ? date.slice(0, 7) : "";
+  const selectedMonth = /^\d{4}-\d{2}-\d{2}$/.test(date) ? date.slice(0, 7) : "";
   const day = attendance[date] ?? {};
   const count = (s: string) => Object.values(day).filter(x => x === s).length;
   const mark = (id: string, status: "Present" | "Absent" | "Leave") => setAttendance({ ...attendance, [date]: { ...day, [id]: status } });
