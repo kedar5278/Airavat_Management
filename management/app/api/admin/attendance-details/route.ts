@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "This admin device session has expired." }, { status: 409 });
     }
 
-    const admin = getSupabaseAdminClient();
+    const admin = getSupabaseAdminClient() as any;
     let query = admin
       .from("guard_attendance")
       .select("guard_id,attendance_date,attendance_time,latitude,longitude,accuracy,address,selfie_path,status");
