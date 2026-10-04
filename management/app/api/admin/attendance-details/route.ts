@@ -24,10 +24,24 @@ export async function GET(request: Request) {
     }
 
     const admin = getSupabaseAdminClient();
-    const { data, error } = await admin
+
+    let query = admin
       .from("guard_attendance")
-      .select("guard_id,attendance_time,latitude,longitude,accuracy,address,selfie_path,status")
-      .eq("attendance_date", date);
+      .select("guard_id,attendance_date,attendance_time,latitude,longitude,accuracy,address,selfie_path,status");
+
+    if (guardId) query = query.eq("guard_id", guardId);
+    if (month) {
+      const start = month + "-01";
+      const [year, monthNumber] = month.split("-").map(Number);
+      const endDate = new Date(Date.UTC(year, monthNumber, 0)).toISOString().slice(0, 10);
+      query = query.gte("attendance_date", start).lte("attendance_date", endDate);
+    } else if (date) {
+      query = query.eq("attendance_date", date);
+    }
+
+    const { data, error } = await query
+      .order("attendance_date", { ascending: false })
+      .order("attendance_time", { ascending: false });
 
     if (error) throw error;
 
