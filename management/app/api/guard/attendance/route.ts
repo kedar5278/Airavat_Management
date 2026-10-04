@@ -69,7 +69,7 @@ export async function GET(){
     const {guard,email,error}=await getGuardForUser();
     if(error)return NextResponse.json({error},{status:401});
     if(!guard)return NextResponse.json({error:`No active guard found for Clerk email: ${email ?? "no email"}. Ask the admin to register your guard with this same email.`},{status:403});
-    const sb=getSupabaseAdminClient();
+    const sb=getSupabaseAdminClient() as any;
     const result=await sb.from("guard_attendance").select("attendance_date,attendance_time,latitude,longitude,accuracy,address,selfie_path,status").eq("guard_id",guard.id).order("attendance_date",{ascending:false});
     if(result.error)throw result.error;
     const attendance=[];
