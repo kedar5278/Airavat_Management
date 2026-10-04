@@ -183,7 +183,7 @@ export default function GuardPortalClient() {
           <section className="guard-card guard-denied">
             <h2>Guard access unavailable</h2>
             <p>{message || "Your Clerk account is not linked to an active Airavat guard."}</p>
-            <UserButton afterSignOutUrl="/guard/sign-in" />
+            <UserButton />
           </section>
         </div>
       </main>
