@@ -11,7 +11,7 @@ async function getGuardForUser(){
   const email=user?.primaryEmailAddress?.emailAddress?.trim().toLowerCase();
   if(!email)return {userId,guard:null,email:null,error:"Your Clerk account has no email address."};
   const sb=getSupabaseAdminClient();
-  const result=await sb.from("guards").select("id,name,email,phone,designation,site,shift,work_type,status,address,join_date,dob").ilike("email",email).eq("status","Active").maybeSingle();
+  const result=await sb.from("guards").select("id,name,email,phone,designation,site,shift,work_type,status,address,join_date,dob").ilike("email",email).eq("status","Active").order("created_at",{ascending:false}).limit(1).maybeSingle();
   if(result.error)throw result.error;
   return {userId,guard:result.data,email,error:null};
 }
@@ -35,7 +35,9 @@ export async function GET(){
     }
     return NextResponse.json({guard,attendance,today:todayIndia()});
   }catch(error){
-    return NextResponse.json({error:error instanceof Error?error.message:"Could not load guard data."},{status:503});
+    const detail=error instanceof Error?error.message:"Unknown guard data error.";
+    console.error("[guard/attendance GET]",detail);
+    return NextResponse.json({error:`Could not load guard data: ${detail}`},{status:503});
   }
 }
 
