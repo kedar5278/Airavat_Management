@@ -20,10 +20,48 @@ async function getGuardForUser(){
   const user=await currentUser();
   const email=user?.primaryEmailAddress?.emailAddress?.trim().toLowerCase();
   if(!email)return {userId,guard:null,email:null,error:"Your Clerk account has no email address."};
+
   const sb=getSupabaseAdminClient();
-  const result=await sb.from("guards").select("id,name,email,phone,designation,site,shift,work_type,status,address,join_date,dob").ilike("email",email).eq("status","Active").order("created_at",{ascending:false}).limit(1).maybeSingle();
+  const result=await sb
+    .from("guards")
+    .select("id,name,email,phone,designation,site,shift,work_type,status,address,join_date,dob")
+    .ilike("email",email)
+    .eq("status","Active")
+    .order("created_at",{ascending:false})
+    .limit(1)
+    .maybeSingle();
+
   if(result.error)throw result.error;
-  return {userId,guard:result.data,email,error:null};
+  if(result.data)return {userId,guard:result.data,email,error:null};
+
+  // During local development, allow a newly-created Clerk account to test
+  // the complete guard portal without requiring an Admin Guard List record.
+  // Production still requires the normal admin-created guard record.
+  if(process.env.NODE_ENV !== "production"){
+    const testId="DEV-"+userId.replace(/[^a-zA-Z0-9]/g,"").slice(-12).toUpperCase();
+    const testGuard={
+      id:testId,
+      name:[user?.firstName,user?.lastName].filter(Boolean).join(" ") || "Test Guard",
+      phone:user?.phoneNumbers?.[0]?.phoneNumber || "0000000000",
+      email,
+      aadhaar:"DEV-TEST",
+      gender:"Not specified",
+      dob:"2000-01-01",
+      address:"Development Test Account",
+      designation:"Security Guard",
+      site:process.env.GUARD_DEV_SITE?.trim() || "Development Test Site",
+      salary:0,
+      join_date:todayIndia(),
+      status:"Active",
+      shift:"Day Shift",
+      work_type:"Development Test",
+    };
+    const created=await sb.from("guards").upsert(testGuard,{onConflict:"id"}).select("id,name,email,phone,designation,site,shift,work_type,status,address,join_date,dob").single();
+    if(created.error)throw created.error;
+    return {userId,guard:created.data,email,error:null};
+  }
+
+  return {userId,guard:null,email,error:null};
 }
 
 export async function GET(){
