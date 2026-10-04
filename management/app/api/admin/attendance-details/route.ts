@@ -6,10 +6,18 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const date = url.searchParams.get("date");
+    const month = url.searchParams.get("month");
+    const guardId = url.searchParams.get("guardId");
     const deviceId = url.searchParams.get("deviceId");
 
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !deviceId) {
-      return NextResponse.json({ error: "Valid attendance date and device session are required." }, { status: 400 });
+    const validDate = !date || /^\d{4}-\d{2}-\d{2}$/.test(date);
+    const validMonth = !month || /^\d{4}-\d{2}$/.test(month);
+
+    if ((!date && !month) || !deviceId || !validDate || !validMonth) {
+      return NextResponse.json(
+        { error: "Valid attendance date/month and device session are required." },
+        { status: 400 },
+      );
     }
 
     const server = await getSupabaseServerClient();
@@ -24,17 +32,17 @@ export async function GET(request: Request) {
     }
 
     const admin = getSupabaseAdminClient();
-
     let query = admin
       .from("guard_attendance")
       .select("guard_id,attendance_date,attendance_time,latitude,longitude,accuracy,address,selfie_path,status");
 
     if (guardId) query = query.eq("guard_id", guardId);
+
     if (month) {
-      const start = month + "-01";
       const [year, monthNumber] = month.split("-").map(Number);
-      const endDate = new Date(Date.UTC(year, monthNumber, 0)).toISOString().slice(0, 10);
-      query = query.gte("attendance_date", start).lte("attendance_date", endDate);
+      const start = month + "-01";
+      const end = new Date(Date.UTC(year, monthNumber, 0)).toISOString().slice(0, 10);
+      query = query.gte("attendance_date", start).lte("attendance_date", end);
     } else if (date) {
       query = query.eq("attendance_date", date);
     }
