@@ -3,24 +3,18 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
-import ClerkGuardProfiles from "@/components/ClerkGuardProfiles";
-import type { Guard, Invoice, Attendance, View } from "./management-types";
+import type { Guard, View } from "./management-types";
 import { today, rowToGuard, guardToRow } from "./management-utils";
 import Login from "./Login";
 import Dashboard from "./Dashboard";
 import Roster from "./Roster";
 import RegisterGuard from "./RegisterGuard";
-import AttendancePage from "./AttendancePage";
-import InvoicesPage from "./InvoicesPage";
 import Profile from "./Profile";
-import InvoiceModal from "./InvoiceModal";
 
 const getDeviceId = () => { let id = localStorage.getItem("airavat-device-id"); if (!id) { id = crypto.randomUUID(); localStorage.setItem("airavat-device-id", id); } return id; };
 
 export default function ManagementApp() {
   const [guards, setGuards] = useState<Guard[]>([]);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [attendance, setAttendance] = useState<Attendance>({});
   const [databaseReady, setDatabaseReady] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [view, setView] = useState<View>("Dashboard");
@@ -30,8 +24,6 @@ export default function ManagementApp() {
   const [filter, setFilter] = useState("All");
   const [selected, setSelected] = useState<Guard | null>(null);
   const [notice, setNotice] = useState("");
-  const [invoiceForm, setInvoiceForm] = useState(false);
-  const [attendanceDate, setAttendanceDate] = useState(today());
   const flash = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(""), 3200); };
 
   useEffect(() => {
@@ -65,24 +57,16 @@ export default function ManagementApp() {
     if (!supabase) return;
     void Promise.all([
       supabase.from("guards").select("*").order("created_at", { ascending: false }),
-      supabase.from("invoices").select("*").order("created_at", { ascending: false }),
-      supabase.from("guard_attendance").select("guard_id,attendance_date,status"),
-    ]).then(([guardResult, invoiceResult, attendanceResult]) => {
-      const failure = guardResult.error ?? invoiceResult.error ?? attendanceResult.error;
+    ]).then(([guardResult]) => {
+      const failure = guardResult.error;
       if (failure) throw failure;
       if (cancelled) return;
       setGuards((guardResult.data ?? []).map(rowToGuard));
-      setInvoices((invoiceResult.data ?? []).map((i: { id: string; client: string; description: string; amount: number | string; issue_date: string; status: string }) => ({ id: i.id, client: i.client, description: i.description, amount: Number(i.amount), date: i.issue_date, status: i.status })));
-      const byDate: Attendance = {};
-      for (const row of attendanceResult.data ?? []) { byDate[row.attendance_date] ??= {}; byDate[row.attendance_date][row.guard_id] = row.status; }
-      setAttendance(byDate);
       setDatabaseReady(true);
     }).catch(e => { if (!cancelled) { setNotice(`Supabase data could not load: ${e.message ?? "Check that supabase/schema.sql has been run."}`); setDatabaseReady(true); } });
     return () => { cancelled = true; };
   }, [loggedIn]);
   useEffect(() => { if (loggedIn && databaseReady) { const sb = getSupabaseBrowserClient(); if (sb && guards.length) void sb.from("guards").upsert(guards.map(guardToRow)).then((result: { error: { message: string } | null }) => { if (result.error) setNotice(`Could not save guard records: ${result.error.message}`); }); } }, [guards, loggedIn, databaseReady]);
-  useEffect(() => { if (loggedIn && databaseReady) { const sb = getSupabaseBrowserClient(); if (sb && invoices.length) void sb.from("invoices").upsert(invoices.map(i => ({ id: i.id, client: i.client, description: i.description, amount: i.amount, issue_date: i.date, status: i.status }))).then((result: { error: { message: string } | null }) => { if (result.error) setNotice(`Could not save invoices: ${result.error.message}`); }); } }, [invoices, loggedIn, databaseReady]);
-  useEffect(() => { if (loggedIn && databaseReady) { const sb = getSupabaseBrowserClient(); if (sb) { const rows = Object.entries(attendance).flatMap(([date, records]) => Object.entries(records).map(([guard_id, status]) => ({ guard_id, attendance_date: date, status }))); if (rows.length) void sb.from("guard_attendance").upsert(rows).then((result: { error: { message: string } | null }) => { if (result.error) setNotice(`Could not save attendance: ${result.error.message}`); }); } } }, [attendance, loggedIn, databaseReady]);
 
   const active = guards.filter(g => g.status === "Active").length;
   const filtered = useMemo(() => guards.filter(g => (filter === "All" || g.status === filter) && `${g.name} ${g.id} ${g.site} ${g.phone} ${g.aadhaar} ${g.designation}`.toLowerCase().includes(query.toLowerCase())), [guards, query, filter]);
@@ -105,12 +89,9 @@ export default function ManagementApp() {
     </aside>
     <main className="main-area"><header className="mobile-head"><Image src="/airavat-logo-navy.jpg" alt="Airavat Security Service logo" width={36} height={36} className="brand-logo" /><strong>AIRAVAT</strong></header>
       {view === "Dashboard" && <Dashboard guards={guards} active={active} onNavigate={go} />}
-      {view === "Guard List" && <><Roster guards={filtered} allCount={guards.length} active={active} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} onAdd={() => go("Register Guard")} onSelect={setSelected} onToggle={g => setGuards(prev => prev.map(x => x.id === g.id ? { ...x, status: x.status === "Active" ? "Inactive" : "Active" } : x))} onDelete={g => { if (!window.confirm(`Delete ${g.name} from the roster?`)) return; const sb = getSupabaseBrowserClient() as any; if (!sb) { flash("Supabase is not configured."); return; } void sb.from("guards").delete().eq("id", g.id).select("id").then(({ data, error }: { data: Array<{ id: string }> | null; error: { message: string } | null }) => { if (error) { flash(`Guard was not deleted: ${error.message}`); return; } if (!data?.length) { flash("Guard could not be deleted. Check your admin database permissions."); return; } setGuards(prev => prev.filter(x => x.id !== g.id)); flash(`${g.name} deleted from the roster and Supabase.`); }).catch((error: unknown) => flash(`Guard was not deleted: ${error instanceof Error ? error.message : "Unknown error"}`)); }} /><ClerkGuardProfiles /></>}
+      {view === "Guard List" && <><Roster guards={filtered} allCount={guards.length} active={active} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} onAdd={() => go("Register Guard")} onSelect={setSelected} onToggle={g => setGuards(prev => prev.map(x => x.id === g.id ? { ...x, status: x.status === "Active" ? "Inactive" : "Active" } : x))} onDelete={g => { if (!window.confirm(`Delete ${g.name} from the roster?`)) return; const sb = getSupabaseBrowserClient() as any; if (!sb) { flash("Supabase is not configured."); return; } void sb.from("guards").delete().eq("id", g.id).select("id").then(({ data, error }: { data: Array<{ id: string }> | null; error: { message: string } | null }) => { if (error) { flash(`Guard was not deleted: ${error.message}`); return; } if (!data?.length) { flash("Guard could not be deleted. Check your admin database permissions."); return; } setGuards(prev => prev.filter(x => x.id !== g.id)); flash(`${g.name} deleted from the roster and Supabase.`); }).catch((error: unknown) => flash(`Guard was not deleted: ${error instanceof Error ? error.message : "Unknown error"}`)); }} />}</>
       {view === "Register Guard" && <RegisterGuard onSave={async g => { const sb = getSupabaseBrowserClient(); if (!sb) throw new Error("Supabase is not configured."); if (g.photo?.startsWith("data:")) { const blob = await (await fetch(g.photo)).blob(); const path = `${g.id}/${Date.now()}.jpg`; const { error } = await sb.storage.from("guard-photos").upload(path, blob, { contentType: blob.type || "image/jpeg", upsert: true }); if (error) throw error; g.photo = path; } const { error } = await sb.from("guards").insert(guardToRow(g)); if (error) throw error; setGuards(prev => [g, ...prev]); flash(`${g.name} registered successfully.`); go("Guard List"); }} onCancel={() => go("Guard List")} />}
-      {view === "Attendance" && <AttendancePage guards={guards} attendance={attendance} setAttendance={setAttendance} date={attendanceDate} setDate={setAttendanceDate} />}
-      {view === "Invoices" && <InvoicesPage invoices={invoices} onNew={() => setInvoiceForm(true)} />}
       {selected && <Profile guard={selected} onClose={() => setSelected(null)} onEdit={() => { setSelected(null); flash("Profile editing is coming soon."); }} />}
-      {invoiceForm && <InvoiceModal onClose={() => setInvoiceForm(false)} onSave={async invoice => { const sb = getSupabaseBrowserClient(); if (!sb) return; const { error } = await sb.from("invoices").insert({ id: invoice.id, client: invoice.client, amount: invoice.amount, issue_date: invoice.date, status: invoice.status, description: invoice.description }); if (error) { flash(`Invoice not saved: ${error.message}`); return; } setInvoices(prev => [invoice, ...prev]); setInvoiceForm(false); flash("Invoice created."); }} />}
       {notice && <div className="toast">✓ &nbsp;{notice}</div>}
     </main>
   </div>;
