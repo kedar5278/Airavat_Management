@@ -29,6 +29,7 @@ export default function ManagementApp() {
   const [siteFilter, setSiteFilter] = useState("All");
   const [selected, setSelected] = useState<Guard | null>(null);
   const [notice, setNotice] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const flash = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(""), 3200); };
 
   useEffect(() => {
@@ -83,10 +84,13 @@ export default function ManagementApp() {
     (siteFilter === "All" || g.site === siteFilter) &&
     `${g.name} ${g.id} ${g.site} ${g.phone} ${g.aadhaar} ${g.designation} ${g.email} ${g.address} ${g.gender} ${g.shift} ${g.workType}`.toLowerCase().includes(query.toLowerCase())
   ), [guards, query, filter, genderFilter, workTypeFilter, shiftFilter, designationFilter, siteFilter]);
-  const go = (next: View) => { setSelected(null); setView(next); };
+  const go = (next: View) => { setSelected(null); setView(next); setMobileMenuOpen(false); };
   const logout = () => { void fetch("/api/admin/logout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deviceId: getDeviceId() }) }); setLoggedIn(false); setDatabaseReady(false); };
 
-  if (sessionChecking) return <div className="login-screen"><div className="login-brand"><Image src="/airavat-logo-navy.jpg" alt="Airavat Security Service" width={112} height={108} className="login-logo"/><h1>AIRAVAT</h1><div className="gold-kicker">SECURITY SERVICE</div><p>સર્વદા શક્તિશાળી</p></div><div className="login-card login-hydrating" role="status">Checking secure session…</div><p className="login-footer">© 2026 Airavat Security Service · Jamnagar, Gujarat</p></div>;
+  if (sessionChecking) return <div className="airavat-loading" role="status" aria-label="Loading Airavat Management">
+    <div className="loading-orbit"><span></span><span></span><span></span><Image src="/airavat-logo-navy.jpg" alt="" width={72} height={72} className="loading-logo" priority /></div>
+    <strong>AIRAVAT</strong><small>SECURITY MANAGEMENT</small><div className="loading-bar"><i /></div><p>Preparing your workspace…</p>
+  </div>;
   if (!loggedIn) return <Login ready={authReady} onLogin={async (id, password) => {
     const response = await fetch("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, password, deviceId: getDeviceId(), deviceName: navigator.userAgent }) });
     const result = await response.json().catch(() => ({}));
@@ -100,9 +104,23 @@ export default function ManagementApp() {
       {([ ["Dashboard", "▦"], ["Guard List", "♙"], ["Register Guard", "＋"] ] as [View,string][]).map(([item, icon]) => <button key={item} onClick={() => go(item)} className={`nav-item ${view === item ? "nav-active" : ""}`}><span>{icon}</span>{item}{view === item && <i />}</button>)}
       <div className="sidebar-bottom"><div className="user-chip"><div className="avatar admin-avatar">A</div><div><strong>Administrator</strong><small>admin@airavat.in</small></div></div><button className="logout" onClick={logout}>↪ &nbsp; Log out</button></div>
     </aside>
-    <main className="main-area"><header className="mobile-head"><Image src="/airavat-logo-navy.jpg" alt="Airavat Security Service logo" width={36} height={36} className="brand-logo" /><strong>AIRAVAT</strong></header>
+    <main className="main-area">
+      <header className="mobile-head">
+        <Image src="/airavat-logo-navy.jpg" alt="Airavat Security Service logo" width={36} height={36} className="brand-logo" />
+        <strong>AIRAVAT</strong>
+        <button type="button" className="mobile-menu-button" onClick={() => setMobileMenuOpen(true)} aria-label="Open navigation menu">☰</button>
+      </header>
+      {mobileMenuOpen && <div className="mobile-menu-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) setMobileMenuOpen(false); }}>
+        <aside className="mobile-menu" role="dialog" aria-label="Mobile navigation">
+          <div className="mobile-menu-head"><div><strong>AIRAVAT</strong><small>Security Management</small></div><button type="button" onClick={() => setMobileMenuOpen(false)} aria-label="Close navigation">×</button></div>
+          <div className="mobile-menu-items">
+            {([ ["Dashboard", "▦"], ["Guard List", "♙"], ["Register Guard", "＋"] ] as [View,string][]).map(([item, icon]) => <button key={item} onClick={() => go(item)} className={view === item ? "active" : ""}><span>{icon}</span>{item}</button>)}
+          </div>
+          <button type="button" className="mobile-menu-logout" onClick={logout}>↪ &nbsp; Log out</button>
+        </aside>
+      </div>}
       {view === "Dashboard" && <Dashboard guards={guards} active={active} onNavigate={go} />}
-      {view === "Guard List" && <><Roster guards={filtered} allGuards={guards} allCount={guards.length} active={active} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} genderFilter={genderFilter} setGenderFilter={setGenderFilter} workTypeFilter={workTypeFilter} setWorkTypeFilter={setWorkTypeFilter} shiftFilter={shiftFilter} setShiftFilter={setShiftFilter} designationFilter={designationFilter} setDesignationFilter={setDesignationFilter} siteFilter={siteFilter} setSiteFilter={setSiteFilter} onAdd={() => go("Register Guard")} onSelect={setSelected} onToggle={g => setGuards(prev => prev.map(x => x.id === g.id ? { ...x, status: x.status === "Active" ? "Inactive" : "Active" } : x))} onDelete={g => { if (!window.confirm(`Delete ${g.name} from the roster?`)) return; const sb = getSupabaseBrowserClient() as any; if (!sb) { flash("Supabase is not configured."); return; } void sb.from("guards").delete().eq("id", g.id).select("id").then(({ data, error }: { data: Array<{ id: string }> | null; error: { message: string } | null }) => { if (error) { flash(`Guard was not deleted: ${error.message}`); return; } if (!data?.length) { flash("Guard could not be deleted. Check your admin database permissions."); return; } setGuards(prev => prev.filter(x => x.id !== g.id)); flash(`${g.name} deleted from the roster and Supabase.`); }).catch((error: unknown) => flash(`Guard was not deleted: ${error instanceof Error ? error.message : "Unknown error"}`)); }} /></>}
+      {view === "Guard List" && <><Roster onBackHome={() => go("Dashboard")} guards={filtered} allGuards={guards} allCount={guards.length} active={active} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} genderFilter={genderFilter} setGenderFilter={setGenderFilter} workTypeFilter={workTypeFilter} setWorkTypeFilter={setWorkTypeFilter} shiftFilter={shiftFilter} setShiftFilter={setShiftFilter} designationFilter={designationFilter} setDesignationFilter={setDesignationFilter} siteFilter={siteFilter} setSiteFilter={setSiteFilter} onAdd={() => go("Register Guard")} onSelect={setSelected} onToggle={g => setGuards(prev => prev.map(x => x.id === g.id ? { ...x, status: x.status === "Active" ? "Inactive" : "Active" } : x))} onDelete={g => { if (!window.confirm(`Delete ${g.name} from the roster?`)) return; const sb = getSupabaseBrowserClient() as any; if (!sb) { flash("Supabase is not configured."); return; } void sb.from("guards").delete().eq("id", g.id).select("id").then(({ data, error }: { data: Array<{ id: string }> | null; error: { message: string } | null }) => { if (error) { flash(`Guard was not deleted: ${error.message}`); return; } if (!data?.length) { flash("Guard could not be deleted. Check your admin database permissions."); return; } setGuards(prev => prev.filter(x => x.id !== g.id)); flash(`${g.name} deleted from the roster and Supabase.`); }).catch((error: unknown) => flash(`Guard was not deleted: ${error instanceof Error ? error.message : "Unknown error"}`)); }} /></>}
       {view === "Register Guard" && <RegisterGuard onBackHome={() => go("Dashboard")} onSave={async g => { const sb = getSupabaseBrowserClient(); if (!sb) throw new Error("Supabase is not configured."); if (g.photo?.startsWith("data:")) { const blob = await (await fetch(g.photo)).blob(); const path = `${g.id}/${Date.now()}.jpg`; const { error } = await sb.storage.from("guard-photos").upload(path, blob, { contentType: blob.type || "image/jpeg", upsert: true }); if (error) throw error; g.photo = path; } const { error } = await sb.from("guards").insert(guardToRow(g)); if (error) throw error; setGuards(prev => [g, ...prev]); flash(`${g.name} registered successfully.`); go("Guard List"); }} onCancel={() => go("Guard List")} />}
       {selected && <Profile guard={selected} onClose={() => setSelected(null)} onEdit={() => { setSelected(null); flash("Profile editing is coming soon."); }} />}
       {notice && <div className="toast">✓ &nbsp;{notice}</div>}
