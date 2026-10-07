@@ -8,6 +8,10 @@ alter table public.admin_users enable row level security;
 alter table public.guards enable row level security;
 alter table public.admin_devices enable row level security;
 
+create or replace function public.is_app_admin()
+returns boolean language sql stable security definer set search_path = public, pg_temp
+as $ select exists (select 1 from public.admin_users where user_id = (select auth.uid())) $;
+
 drop policy if exists "admin can verify own admin record" on public.admin_users;
 create policy "admin can verify own admin record" on public.admin_users for select to authenticated using (user_id = (select auth.uid()));
 drop policy if exists "admin manages guards" on public.guards;
@@ -17,7 +21,6 @@ create policy "guard reads own profile" on public.guards for select to authentic
   and right(regexp_replace(coalesce(phone, ''), '\\D', '', 'g'), 10)
       = right(regexp_replace(coalesce((select auth.jwt() ->> 'phone'), ''), '\\D', '', 'g'), 10)
 );
-create policy "admin manages invoices" on public.invoices for all to authenticated using (public.is_app_admin() and public.has_active_admin_device()) with check (public.is_app_admin() and public.has_active_admin_device());
 drop policy if exists "admin manages own device slots" on public.admin_devices;
 create policy "admin manages own device slots" on public.admin_devices for select to authenticated using (user_id = (select auth.uid()) and public.is_app_admin());
 
