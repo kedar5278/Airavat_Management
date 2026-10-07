@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 
 export default function Login({ ready, onLogin }: { ready: boolean; onLogin: (id: string, password: string) => Promise<void> }) {
