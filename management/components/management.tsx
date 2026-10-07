@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { Guard, View } from "./management-types";
-import { today, rowToGuard, guardToRow } from "./management-utils";
+import { rowToGuard, guardToRow } from "./management-utils";
 import Login from "./Login";
 import Dashboard from "./Dashboard";
 import Roster from "./Roster";
@@ -84,7 +84,7 @@ export default function ManagementApp() {
     <aside className="sidebar">
       <div className="brand"><Image src="/airavat-logo-navy.jpg" alt="Airavat Security Service logo" width={44} height={44} className="brand-logo" /><div><strong>AIRAVAT</strong><small>Security Management</small></div></div>
       <div className="side-label">MAIN MENU</div>
-      {([ ["Dashboard", "▦"], ["Guard List", "♙"], ["Register Guard", "＋"], ["Attendance", "▣"], ["Invoices", "▤"] ] as [View,string][]).map(([item, icon]) => <button key={item} onClick={() => go(item)} className={`nav-item ${view === item ? "nav-active" : ""}`}><span>{icon}</span>{item}{view === item && <i />}</button>)}
+      {([ ["Dashboard", "▦"], ["Guard List", "♙"], ["Register Guard", "＋"] ] as [View,string][]).map(([item, icon]) => <button key={item} onClick={() => go(item)} className={`nav-item ${view === item ? "nav-active" : ""}`}><span>{icon}</span>{item}{view === item && <i />}</button>)}
       <div className="sidebar-bottom"><div className="user-chip"><div className="avatar admin-avatar">A</div><div><strong>Administrator</strong><small>admin@airavat.in</small></div></div><button className="logout" onClick={logout}>↪ &nbsp; Log out</button></div>
     </aside>
     <main className="main-area"><header className="mobile-head"><Image src="/airavat-logo-navy.jpg" alt="Airavat Security Service logo" width={36} height={36} className="brand-logo" /><strong>AIRAVAT</strong></header>
