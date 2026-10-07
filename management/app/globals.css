@@ -433,3 +433,38 @@ tbody tr:hover{background:#fafbfd}
   .metric-value{font-size:18px}
   .metric-label{font-size:8px}
 }
+
+
+/* Filter action + mobile form polish */
+.filter-apply-button{
+  grid-column:1 / -1;
+  width:100%;
+  min-height:40px;
+  border:1px solid var(--navy);
+  border-radius:9px;
+  background:var(--navy);
+  color:#fff;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+  box-shadow:0 4px 10px rgba(8,13,66,.12);
+}
+.filter-apply-button:hover{background:var(--navy-2);transform:translateY(-1px)}
+@media(max-width:760px){
+  .filter-apply-button{grid-column:1 / -1;min-height:42px}
+  .form-page .page-heading{padding:16px 14px}
+  .form-page .page-heading .primary-button{width:100%}
+  .form-section-title{flex-wrap:wrap}
+  .personal-layout{grid-template-columns:1fr}
+  .photo-column{width:100%;max-width:180px}
+  .form-actions>div{display:grid;grid-template-columns:1fr;gap:8px}
+  .form-actions>div button,.form-actions>.secondary-button{width:100%;min-height:44px}
+  .roster-toolbar .search-wrap{width:100%}
+}
+@media(max-width:420px){
+  .content-wrap{padding-left:10px;padding-right:10px}
+  .form-section{padding:13px 11px}
+  .form-section-title h2{font-size:13px}
+  .photo-column{max-width:none}
+  .photo-preview{min-height:150px}
+}
