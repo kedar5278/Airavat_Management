@@ -10,7 +10,7 @@ export default function Roster({
   guards, allGuards, allCount, active, query, setQuery, filter, setFilter,
   genderFilter, setGenderFilter, workTypeFilter, setWorkTypeFilter,
   shiftFilter, setShiftFilter, designationFilter, setDesignationFilter,
-  siteFilter, setSiteFilter, onAdd, onSelect, onToggle, onDelete
+  siteFilter, setSiteFilter, onAdd, onSelect, onToggle, onDelete, onBackHome
 }: {
   guards: Guard[]; allGuards: Guard[]; allCount: number; active: number;
   query: string; setQuery: (s: string) => void; filter: string; setFilter: (s: string) => void;
@@ -19,7 +19,7 @@ export default function Roster({
   shiftFilter: string; setShiftFilter: (s: string) => void;
   designationFilter: string; setDesignationFilter: (s: string) => void;
   siteFilter: string; setSiteFilter: (s: string) => void;
-  onAdd: () => void; onSelect: (g: Guard) => void; onToggle: (g: Guard) => void; onDelete: (g: Guard) => void;
+  onAdd: () => void; onSelect: (g: Guard) => void; onToggle: (g: Guard) => void; onDelete: (g: Guard) => void; onBackHome: () => void;
 }) {
   const [draftGender, setDraftGender] = useState(genderFilter);
   const [draftWorkType, setDraftWorkType] = useState(workTypeFilter);
@@ -39,6 +39,7 @@ export default function Roster({
     Array.from(new Set(allGuards.map(g => String(g[key] ?? "")).filter(Boolean))).sort();
 
   return <div className="content-wrap">
+    <button type="button" className="mobile-back-home" onClick={onBackHome}>← &nbsp; Back to Home</button>
     <PageHeading eyebrow="Personnel directory" title="Security Personnel Roster" subtitle={`${allCount} total enrolled guards · ${active} on active deployment`} action={<button className="primary-button" onClick={onAdd}>＋ &nbsp; Enroll New Guard</button>} />
     <section className="summary-row roster-stats">
       <Metric label="TOTAL ENROLLED PERSONNEL" value={allCount} note="Roster count" icon="♙" tone="blue" />
