@@ -1,0 +1,29 @@
+{
+  "name": "Airavat Security Management",
+  "short_name": "Airavat Management",
+  "description": "Security personnel, attendance, and management dashboard.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#080d42",
+  "theme_color": "#080d42",
+  "icons": [
+    {
+      "src": "/airavat-logo-navy.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/airavat-logo-navy.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "business",
+    "productivity"
+  ]
+}
