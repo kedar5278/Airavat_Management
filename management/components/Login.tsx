@@ -40,7 +40,7 @@ export default function Login({ ready, onLogin }: { ready: boolean; onLogin: (id
         <div className="login-heading"><span>♙</span><div><h2>Admin Portal</h2><p>Verified sign-in · maximum two active devices</p></div></div>
         {!configured&&<p className="setup-message">Supabase URL/key is missing or still uses template values.</p>}
         <label>Admin ID<input value={username} onChange={e=>setUsername(e.target.value)} autoComplete="username" required /></label>
-        <label>Password><div className="password-box"><input type={show?"text":"password"} value={password} onChange={e=>setPassword(e.target.value)} autoComplete="current-password" required /><button type="button" onClick={()=>setShow(!show)}>{show?"Hide":"Show"}</button></div></label>
+        <label>Password<div className="password-box"><input type={show?"text":"password"} value={password} onChange={e=>setPassword(e.target.value)} autoComplete="current-password" required /><button type="button" onClick={()=>setShow(!show)}>{show?"Hide":"Show"}</button></div></label>
         {error&&<p className="login-error">{error}</p>}
         <button className="login-submit" disabled={pending}>{pending?"Signing in…":"Sign in"}</button>
       </form>
