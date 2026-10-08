@@ -82,7 +82,7 @@ export async function POST(request: Request) {
         {
           error:
             slotError?.message ??
-            "Admin is already signed in on two devices. Sign out one device and try again.",
+            "Admin is already signed in on five devices. Sign out one device and try again.",
         },
         { status: 409 },
       );
