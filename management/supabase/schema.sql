@@ -38,14 +38,14 @@ begin
   perform pg_advisory_xact_lock(hashtextextended(v_user::text, 0));
   delete from public.admin_devices where user_id = v_user and expires_at <= now();
   if exists (select 1 from public.admin_devices where user_id = v_user and device_id = p_device_id) then
-    update public.admin_devices set device_name = left(coalesce(p_device_name, 'Browser'), 120), last_seen = now(), expires_at = now() + interval '90 seconds'
+    update public.admin_devices set device_name = left(coalesce(p_device_name, 'Browser'), 120), last_seen = now(), expires_at = now() + interval '3 days'
     where user_id = v_user and device_id = p_device_id;
     return jsonb_build_object('allowed', true, 'active_devices', (select count(*) from public.admin_devices where user_id = v_user));
   end if;
   select count(*) into v_count from public.admin_devices where user_id = v_user and expires_at > now();
-  if v_count >= 2 then return jsonb_build_object('allowed', false, 'active_devices', v_count); end if;
+  if v_count >= 5 then return jsonb_build_object('allowed', false, 'active_devices', v_count); end if;
   insert into public.admin_devices(user_id, device_id, device_name, last_seen, expires_at)
-  values (v_user, p_device_id, left(coalesce(p_device_name, 'Browser'), 120), now(), now() + interval '90 seconds');
+  values (v_user, p_device_id, left(coalesce(p_device_name, 'Browser'), 120), now(), now() + interval '3 days');
   return jsonb_build_object('allowed', true, 'active_devices', v_count + 1);
 end;
 $$;
@@ -58,7 +58,7 @@ begin
   if v_user is null or not exists (select 1 from public.admin_users where user_id = v_user) then
     raise exception 'Admin access required' using errcode = '42501';
   end if;
-  update public.admin_devices set last_seen = now(), expires_at = now() + interval '90 seconds'
+  update public.admin_devices set last_seen = now(), expires_at = now() + interval '3 days'
   where user_id = v_user and device_id = p_device_id and expires_at > now();
   get diagnostics v_updated = row_count;
   return jsonb_build_object('allowed', v_updated = 1);
